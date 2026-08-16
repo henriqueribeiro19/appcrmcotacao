@@ -1,4 +1,4 @@
-# 🎯 Cotação Pro — Cloudfy Partners
+# 🎯 Cotação Pro — HRP Soluções
 
 Sistema completo de cotação comercial com controle de leads, licenças, cotações com cálculo automático de descontos globais, royalties por categoria de canal e geração de propostas em PDF.
 
@@ -129,8 +129,8 @@ Acesse no navegador: **http://localhost:5173**
 
 | Email | Senha | Perfil |
 |-------|-------|--------|
-| admin@cloudfy.com | admin123 | Administrador |
-| joao@cloudfy.com | joao123 | Vendedor |
+| admin@hrpsolucoes.com | admin123 | Administrador |
+| joao@hrpsolucoes.com | joao123 | Vendedor |
 
 ---
 
@@ -157,4 +157,4 @@ O arquivo `src/services/db.ts` usa **localStorage** como banco mockado. Para mig
 ---
 
 ## 📝 Licença
-Uso interno — Cloudfy Partners.
+Uso interno — HRP Solucoes.
