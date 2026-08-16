@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.perfil == 'admin';
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isAdmin() || isOwner(userId));
+      allow create: if isAdmin();
+      allow update: if isAdmin() || isOwner(userId);
+      allow delete: if isAdmin();
+    }
+    match /leads/{leadId} {
+      allow read: if isAuthenticated() && (isAdmin() || resource.data.responsavelId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (isAdmin() || resource.data.responsavelId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+    match /staging/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /licencas_cloudfy/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /licencas_cplug/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /categorias_canal/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /cotacoes/{id} {
+      allow read: if isAuthenticated() && (isAdmin() || resource.data.vendedorId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (isAdmin() || resource.data.vendedorId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+  }
+}

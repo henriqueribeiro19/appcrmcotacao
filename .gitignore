@@ -1,0 +1,26 @@
+# Ignorar dependências
+node_modules/
+vendor/
+
+# Ignorar arquivos de build
+dist/
+build/
+
+# Ignorar arquivos temporários
+*.log
+*.tmp
+*.swp
+
+# Ignorar configurações locais
+.env
+.DS_Store
+Thumbs.db
+
+# Ignorar diretórios de versões
+versao_2/
+versao_3/
+versao_4/
+versao_5.1/
+versao_5.2/
+versao_*/
+
