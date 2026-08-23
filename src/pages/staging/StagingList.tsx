@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { stagingService } from '@/services/stagingService';
-import { leadService } from '@/services/leadService';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ScoreBadge } from '@/components/ScoreBadge';
@@ -12,9 +11,7 @@ import {
   Filter,
   Check,
   X,
-  Eye,
   Upload,
-  Building2,
   Trash2,
   ArrowRight,
   AlertTriangle,
@@ -53,7 +50,7 @@ export function StagingList() {
   const handleImport = async (data: Record<string, unknown>[]) => {
     const stagingItems = data.map((row) => ({
       fonte: 'upload_xlsx',
-      bruto: row.bruto || row,
+      bruto: (row.bruto && typeof row.bruto === 'object' ? row.bruto : row) as Record<string, unknown>,
       nome: String(row.razaoSocial || row.nome || '').trim(),
       cnpj: String(row.cnpj || '').replace(/\D/g, ''),
       telefone: String(row.telefone || '').replace(/\D/g, ''),

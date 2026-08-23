@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useAuth } from '@/hooks/useAuth';
-import { useRole } from '@/hooks/useRole';
 import { useLead } from '@/hooks/useLead';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Tag';
 import { ScoreBadge } from '@/components/ScoreBadge';
 import { formatCNPJ, formatPhone, formatDate } from '@/utils/formatters';
@@ -23,8 +20,6 @@ const statusColors: Record<string, 'default' | 'success' | 'warning' | 'danger' 
 
 export function ArquivadosList() {
   const navigate = useNavigate();
-  const { userProfile } = useAuth();
-  const { isAdmin } = useRole();
   const { arquivados, loading, fetchArquivados, desarquivarLead } = useLead();
   const [search, setSearch] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'ganho' | 'perdido'>('todos');

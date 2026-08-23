@@ -69,7 +69,7 @@ export const stagingService = {
     return null;
   },
 
-  async create(data: Omit<Staging, 'id' | 'score' | 'classificacao' | 'produtoSugerido' | 'criadoEm'>) {
+  async create(data: Omit<Staging, 'id' | 'score' | 'classificacao' | 'produtoSugerido' | 'criadoEm' | 'status'>) {
     const score = calcularScore(data);
     const docRef = await addDoc(collection(db, STAGING_COLLECTION), {
       ...data,
@@ -82,7 +82,7 @@ export const stagingService = {
     return docRef.id;
   },
 
-  async createMany(items: Omit<Staging, 'id' | 'score' | 'classificacao' | 'produtoSugerido' | 'criadoEm'>[]) {
+  async createMany(items: Omit<Staging, 'id' | 'score' | 'classificacao' | 'produtoSugerido' | 'criadoEm' | 'status'>[]) {
     const createdIds: string[] = [];
     for (const item of items) {
       const id = await this.create(item);

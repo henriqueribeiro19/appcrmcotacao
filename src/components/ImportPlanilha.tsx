@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
-import { Upload, FileSpreadsheet, X, Check, AlertCircle, ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
+import { Upload, FileSpreadsheet, Check, AlertCircle, ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { isValidCNPJ, isValidEmail, isValidPhone } from '@/utils/validators';

@@ -8,8 +8,6 @@ import {
   updateDoc,
   deleteDoc,
   query,
-  where,
-  orderBy,
   serverTimestamp,
   type QueryConstraint,
 } from 'firebase/firestore';

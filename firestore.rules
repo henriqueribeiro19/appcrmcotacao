@@ -34,7 +34,15 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
+    match /pacotes_cplug/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
     match /categorias_canal/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /categorias_licencas_cloudfy/{id} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }

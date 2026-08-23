@@ -13,7 +13,7 @@ const colunas = [
 ];
 
 export function KanbanBoard() {
-  const { leads, loading, fetchLeads, moverLead, leadsPorStatus } = useFunil();
+  const { loading, fetchLeads, moverLead, leadsPorStatus } = useFunil();
 
   useEffect(() => {
     fetchLeads();

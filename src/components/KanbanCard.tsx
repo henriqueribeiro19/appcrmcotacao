@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Phone, Mail, MapPin, GripVertical } from 'lucide-react';
+import { Phone, Mail, MapPin, GripVertical } from 'lucide-react';
 import { ScoreBadge } from '@/components/ScoreBadge';
 import { formatCNPJ, formatPhone } from '@/utils/formatters';
 import type { Lead } from '@/types';
