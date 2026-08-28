@@ -6,6 +6,7 @@ import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { ArrowLeft, Save, AlertTriangle } from 'lucide-react';
+import { parseValorMonetario } from '../../../utils/calculos';
 
 interface FormData { nome: string; categoriaId: string; valor: string; permiteMultiplasUnidades: boolean; ativo: boolean; }
 
@@ -35,7 +36,7 @@ export function LicencaCloudfyForm() {
     if (!formData.nome.trim()) novosErros.nome = 'Nome é obrigatório';
     if (!formData.categoriaId) novosErros.categoriaId = 'Categoria é obrigatória';
     if (!formData.valor.trim()) novosErros.valor = 'Valor é obrigatório';
-    else { const v = parseFloat(formData.valor.replace(',', '.')); if (isNaN(v) || v < 0) novosErros.valor = 'Valor inválido'; }
+    else { const v = parseValorMonetario(formData.valor); if (v === null || v < 0) novosErros.valor = 'Informe um valor válido, por exemplo 1.234,56'; }
     setErros(novosErros);
     return Object.keys(novosErros).length === 0;
   };
@@ -46,7 +47,7 @@ export function LicencaCloudfyForm() {
     setSalvando(true);
     try {
       const categoria = categorias.find((item) => item.id === formData.categoriaId);
-      const payload = { nome: formData.nome.trim(), categoriaId: formData.categoriaId, categoriaNome: categoria?.nome || '', valor: parseFloat(formData.valor.replace(',', '.')), permiteMultiplasUnidades: formData.permiteMultiplasUnidades, ativo: formData.ativo };
+      const payload = { nome: formData.nome.trim(), categoriaId: formData.categoriaId, categoriaNome: categoria?.nome || '', valor: parseValorMonetario(formData.valor)!, permiteMultiplasUnidades: formData.permiteMultiplasUnidades, ativo: formData.ativo };
       if (isEdicao) await atualizar(id!, payload); else await criar(payload);
       navigate('/licencas/cloudfy');
     } catch (err) { setErroGeral('Erro ao salvar licença.'); console.error(err); }

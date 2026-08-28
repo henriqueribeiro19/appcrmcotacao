@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Tag } from '../../components/ui/Tag';
 import { ArrowLeft, Save, AlertTriangle, Plus, X, Layers, CheckSquare, Hash, Package } from 'lucide-react';
+import { parseValorMonetario } from '../../utils/calculos';
 
 interface ModuloFixo { id: string; nome: string; }
 interface ModuloOpcional { id: string; nome: string; valor: number; }
@@ -39,7 +40,7 @@ export function PacoteForm() {
     const novosErros: Partial<Record<keyof FormData, string>> = {};
     if (!formData.nome.trim()) novosErros.nome = 'Nome é obrigatório';
     if (!formData.valorBase.trim()) novosErros.valorBase = 'Valor base é obrigatório';
-    else { const v = parseFloat(formData.valorBase.replace(',', '.')); if (isNaN(v) || v < 0) novosErros.valorBase = 'Valor base inválido'; }
+    else { const v = parseValorMonetario(formData.valorBase); if (v === null || v < 0) novosErros.valorBase = 'Informe um valor válido, por exemplo 1.234,56'; }
     setErros(novosErros);
     return Object.keys(novosErros).length === 0;
   };
@@ -49,7 +50,7 @@ export function PacoteForm() {
     if (!validar()) return;
     setSalvando(true);
     try {
-      const payload = { nome: formData.nome.trim(), descricao: formData.descricao.trim() || undefined, valorBase: parseFloat(formData.valorBase.replace(',', '.')), ativo: formData.ativo, modulosFixos: formData.modulosFixos, modulosOpcionais: formData.modulosOpcionais, itensQuantificaveis: formData.itensQuantificaveis };
+      const payload = { nome: formData.nome.trim(), descricao: formData.descricao.trim() || undefined, valorBase: parseValorMonetario(formData.valorBase)!, ativo: formData.ativo, modulosFixos: formData.modulosFixos, modulosOpcionais: formData.modulosOpcionais, itensQuantificaveis: formData.itensQuantificaveis };
       if (isEdicao) await atualizar(id!, payload); else await criar(payload);
       navigate('/pacotes');
     } catch (err) { setErroGeral('Erro ao salvar pacote.'); console.error(err); }
@@ -64,10 +65,10 @@ export function PacoteForm() {
   const adicionarFixo = () => { if (!novoFixo.trim()) return; setFormData((prev) => ({ ...prev, modulosFixos: [...prev.modulosFixos, { id: crypto.randomUUID(), nome: novoFixo.trim() }] })); setNovoFixo(''); };
   const removerFixo = (idRemover: string) => setFormData((prev) => ({ ...prev, modulosFixos: prev.modulosFixos.filter((m) => m.id !== idRemover) }));
 
-  const adicionarOpcional = () => { if (!novoOpcionalNome.trim() || !novoOpcionalValor.trim()) return; const valor = parseFloat(novoOpcionalValor.replace(',', '.')); if (isNaN(valor) || valor < 0) return; setFormData((prev) => ({ ...prev, modulosOpcionais: [...prev.modulosOpcionais, { id: crypto.randomUUID(), nome: novoOpcionalNome.trim(), valor }] })); setNovoOpcionalNome(''); setNovoOpcionalValor(''); };
+  const adicionarOpcional = () => { if (!novoOpcionalNome.trim() || !novoOpcionalValor.trim()) return; const valor = parseValorMonetario(novoOpcionalValor); if (valor === null || valor < 0) return; setFormData((prev) => ({ ...prev, modulosOpcionais: [...prev.modulosOpcionais, { id: crypto.randomUUID(), nome: novoOpcionalNome.trim(), valor }] })); setNovoOpcionalNome(''); setNovoOpcionalValor(''); };
   const removerOpcional = (idRemover: string) => setFormData((prev) => ({ ...prev, modulosOpcionais: prev.modulosOpcionais.filter((m) => m.id !== idRemover) }));
 
-  const adicionarQuantificavel = () => { if (!novoQuantNome.trim() || !novoQuantValor.trim()) return; const valor = parseFloat(novoQuantValor.replace(',', '.')); if (isNaN(valor) || valor < 0) return; setFormData((prev) => ({ ...prev, itensQuantificaveis: [...prev.itensQuantificaveis, { id: crypto.randomUUID(), nome: novoQuantNome.trim(), valorUnitario: valor }] })); setNovoQuantNome(''); setNovoQuantValor(''); };
+  const adicionarQuantificavel = () => { if (!novoQuantNome.trim() || !novoQuantValor.trim()) return; const valor = parseValorMonetario(novoQuantValor); if (valor === null || valor < 0) return; setFormData((prev) => ({ ...prev, itensQuantificaveis: [...prev.itensQuantificaveis, { id: crypto.randomUUID(), nome: novoQuantNome.trim(), valorUnitario: valor }] })); setNovoQuantNome(''); setNovoQuantValor(''); };
   const removerQuantificavel = (idRemover: string) => setFormData((prev) => ({ ...prev, itensQuantificaveis: prev.itensQuantificaveis.filter((m) => m.id !== idRemover) }));
 
   const formatarValor = (valor: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);

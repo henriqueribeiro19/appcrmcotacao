@@ -87,12 +87,12 @@ export function PacotesList() {
         )}
       </div>
 
-      <Modal isOpen={!!pacoteParaRemover} onClose={() => setPacoteParaRemover(null)} title="Confirmar exclusão">
+      <Modal isOpen={!!pacoteParaRemover} onClose={() => setPacoteParaRemover(null)} title="Desativar pacote">
         <div className="space-y-4">
-          <p className="text-slate-300">Tem certeza que deseja remover este pacote?</p>
+          <p className="text-slate-300">O pacote será preservado no histórico, mas deixará de aparecer em novos cadastros. Deseja continuar?</p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setPacoteParaRemover(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleRemover} disabled={removendo} className="bg-red-600 hover:bg-red-700">{removendo ? 'Removendo...' : 'Remover'}</Button>
+            <Button variant="destructive" onClick={handleRemover} disabled={removendo} className="bg-red-600 hover:bg-red-700">{removendo ? 'Desativando...' : 'Desativar'}</Button>
           </div>
         </div>
       </Modal>

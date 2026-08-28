@@ -85,12 +85,12 @@ export function CategoriasList() {
         )}
       </Card>
 
-      <Modal isOpen={!!categoriaParaRemover} onClose={() => setCategoriaParaRemover(null)} title="Confirmar exclusão">
+      <Modal isOpen={!!categoriaParaRemover} onClose={() => setCategoriaParaRemover(null)} title="Desativar categoria">
         <div className="space-y-4">
-          <p className="text-slate-300">Tem certeza que deseja remover esta categoria?</p>
+          <p className="text-slate-300">A categoria será preservada, mas deixará de ser usada em novos cadastros. Deseja continuar?</p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setCategoriaParaRemover(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleRemover} disabled={removendo} className="bg-red-600 hover:bg-red-700">{removendo ? 'Removendo...' : 'Remover'}</Button>
+            <Button variant="destructive" onClick={handleRemover} disabled={removendo} className="bg-red-600 hover:bg-red-700">{removendo ? 'Desativando...' : 'Desativar'}</Button>
           </div>
         </div>
       </Modal>

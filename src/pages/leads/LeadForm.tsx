@@ -63,6 +63,7 @@ const initialFormState: Partial<Lead> = {
   capitalSocial: undefined,
   socios: '',
   cep: '',
+  municipio: '',
   uf: '',
   logradouro: '',
   numero: '',
@@ -127,6 +128,7 @@ export function LeadForm() {
         porte: lead.porte || '',
         socios: lead.socios || '',
         cep: lead.cep || '',
+        municipio: lead.municipio || '',
         uf: lead.uf || '',
         logradouro: lead.logradouro || '',
         numero: lead.numero || '',
@@ -170,6 +172,7 @@ export function LeadForm() {
           ...prev,
           logradouro: data.logradouro || '',
           bairro: data.bairro || '',
+          municipio: data.localidade || '',
           uf: data.uf || '',
           complemento: data.complemento || '',
         }));
@@ -321,12 +324,13 @@ export function LeadForm() {
           <div className="space-y-6">
             <Card>
               <h3 className="text-lg font-semibold text-white mb-4">Dados da Empresa</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   label="Razão Social *"
                   value={form.razaoSocial || ''}
                   onChange={(e) => setForm({ ...form, razaoSocial: e.target.value })}
                   error={errors.razaoSocial}
+                  containerClassName="md:col-span-2"
                 />
                 <Input
                   label="Nome Fantasia"
@@ -377,6 +381,7 @@ export function LeadForm() {
                     label="Sócios"
                     value={form.socios || ''}
                     onChange={(e) => setForm({ ...form, socios: e.target.value })}
+                    containerClassName="md:col-span-2"
                   />
                 </div>
               </div>
@@ -384,7 +389,7 @@ export function LeadForm() {
 
             <Card>
               <h3 className="text-lg font-semibold text-white mb-4">Endereço</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Input
                   label="CEP"
                   value={form.cep ? formatCEP(form.cep) : ''}
@@ -397,20 +402,10 @@ export function LeadForm() {
                   placeholder="00000-000"
                 />
                 <Input
-                  label="UF"
-                  value={form.uf || ''}
-                  onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })}
-                  maxLength={2}
-                />
-                <Input
-                  label="Bairro"
-                  value={form.bairro || ''}
-                  onChange={(e) => setForm({ ...form, bairro: e.target.value })}
-                />
-                <Input
                   label="Logradouro"
                   value={form.logradouro || ''}
                   onChange={(e) => setForm({ ...form, logradouro: e.target.value })}
+                  containerClassName="md:col-span-2"
                 />
                 <Input
                   label="Número"
@@ -421,6 +416,22 @@ export function LeadForm() {
                   label="Complemento"
                   value={form.complemento || ''}
                   onChange={(e) => setForm({ ...form, complemento: e.target.value })}
+                />
+                <Input
+                  label="Bairro"
+                  value={form.bairro || ''}
+                  onChange={(e) => setForm({ ...form, bairro: e.target.value })}
+                />
+                <Input
+                  label="Cidade / Município"
+                  value={form.municipio || ''}
+                  onChange={(e) => setForm({ ...form, municipio: e.target.value })}
+                />
+                <Input
+                  label="UF"
+                  value={form.uf || ''}
+                  onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })}
+                  maxLength={2}
                 />
               </div>
             </Card>
@@ -459,7 +470,7 @@ export function LeadForm() {
 
             <Card>
               <h3 className="text-lg font-semibold text-white mb-4">Contatos</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   label="Nome do Contato Principal"
                   value={form.contatoNome || ''}

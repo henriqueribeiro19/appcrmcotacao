@@ -40,7 +40,7 @@ export function useLicencaCplug() {
   const remover = async (id: string) => {
     setLoading(true);
     try {
-      await licencaCplugService.remover(id);
+      await licencaCplugService.atualizar(id, { ativo: false });
       setLicencas(prev => prev.filter(l => l.id !== id));
     } catch (err) { setError('Erro ao remover licença Cplug'); throw err; }
     finally { setLoading(false); }

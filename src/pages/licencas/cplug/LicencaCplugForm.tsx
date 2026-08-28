@@ -5,6 +5,7 @@ import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { ArrowLeft, Save, AlertTriangle, CheckSquare, Hash } from 'lucide-react';
+import { parseValorMonetario } from '../../../utils/calculos';
 
 interface FormData { nome: string; descricao: string; valor: string; tipo: 'checkbox' | 'quantificavel'; ativo: boolean; }
 
@@ -30,7 +31,7 @@ export function LicencaCplugForm() {
     const novosErros: Partial<Record<keyof FormData, string>> = {};
     if (!formData.nome.trim()) novosErros.nome = 'Nome é obrigatório';
     if (!formData.valor.trim()) novosErros.valor = 'Valor é obrigatório';
-    else { const v = parseFloat(formData.valor.replace(',', '.')); if (isNaN(v) || v < 0) novosErros.valor = 'Valor inválido'; }
+    else { const v = parseValorMonetario(formData.valor); if (v === null || v < 0) novosErros.valor = 'Informe um valor válido, por exemplo 1.234,56'; }
     setErros(novosErros);
     return Object.keys(novosErros).length === 0;
   };
@@ -40,7 +41,7 @@ export function LicencaCplugForm() {
     if (!validar()) return;
     setSalvando(true);
     try {
-      const payload = { nome: formData.nome.trim(), descricao: formData.descricao.trim() || undefined, valor: parseFloat(formData.valor.replace(',', '.')), tipo: formData.tipo, ativo: formData.ativo };
+      const payload = { nome: formData.nome.trim(), descricao: formData.descricao.trim() || undefined, valor: parseValorMonetario(formData.valor)!, tipo: formData.tipo, ativo: formData.ativo };
       if (isEdicao) await atualizar(id!, payload); else await criar(payload);
       navigate('/licencas/cplug');
     } catch (err) { setErroGeral('Erro ao salvar licença.'); console.error(err); }

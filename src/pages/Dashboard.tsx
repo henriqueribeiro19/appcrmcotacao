@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useLead } from '@/hooks/useLead';
+import { useCotacao } from '@/hooks/useCotacao';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { formatarValor } from '@/utils/calculos';
 import {
   Users,
   FileText,
@@ -15,8 +17,9 @@ import {
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { userProfile } = useAuth();
-  const { leads, fetchLeads } = useLead();
+  const { userProfile, isAdmin } = useAuth();
+  const { leads, arquivados, fetchLeads, fetchArquivados } = useLead();
+  const { cotacoes, fetchCotacoes } = useCotacao();
   const [metrics, setMetrics] = useState({
     totalLeads: 0,
     cotacoes: 0,
@@ -25,24 +28,30 @@ export function Dashboard() {
   });
 
   useEffect(() => {
-    fetchLeads(userProfile?.uid);
-  }, [fetchLeads, userProfile]);
+    fetchLeads(isAdmin ? undefined : userProfile?.uid);
+    fetchCotacoes();
+    if (isAdmin) fetchArquivados();
+  }, [fetchArquivados, fetchCotacoes, fetchLeads, isAdmin, userProfile]);
 
   useEffect(() => {
-    const total = leads.length;
-    const ganhos = leads.filter((l) => l.statusFunil === 'fechado_ganho').length;
+    const todosLeads = [...leads, ...arquivados.filter((arquivado) => !leads.some((lead) => lead.id === arquivado.id))];
+    const total = todosLeads.length;
+    const ganhos = todosLeads.filter((l) => l.statusFunil === 'fechado_ganho').length;
+    const faturamento = cotacoes
+      .filter((cotacao) => cotacao.status === 'aprovada')
+      .reduce((totalAprovado, cotacao) => totalAprovado + (cotacao.valorTotal || 0), 0);
     setMetrics({
       totalLeads: total,
-      cotacoes: leads.filter((l) => l.statusFunil === 'proposta' || l.statusFunil === 'negociacao').length,
-      faturamento: 0,
+      cotacoes: cotacoes.filter((cotacao) => cotacao.status === 'rascunho' || cotacao.status === 'enviada').length,
+      faturamento,
       conversao: total > 0 ? Math.round((ganhos / total) * 100) : 0,
     });
-  }, [leads]);
+  }, [arquivados, cotacoes, leads]);
 
   const cards = [
     { label: 'Total Leads', value: metrics.totalLeads, icon: Users, color: 'text-blue-400' },
     { label: 'Cotações Ativas', value: metrics.cotacoes, icon: FileText, color: 'text-amber-400' },
-    { label: 'Faturamento', value: `R$ ${metrics.faturamento.toLocaleString('pt-BR')}`, icon: TrendingUp, color: 'text-emerald-400' },
+    { label: 'Faturamento aprovado', value: formatarValor(metrics.faturamento), icon: TrendingUp, color: 'text-emerald-400' },
     { label: 'Taxa de Conversão', value: `${metrics.conversao}%`, icon: Percent, color: 'text-purple-400' },
   ];
 

@@ -106,7 +106,7 @@ export interface Licenca {
 export interface CategoriaCanal {
   id: string;
   nome: string;
-  percentualRoyalties?: number;
+  percentualRoyalties: number;
   produto?: Produto;
   descricao?: string;
   ativo: boolean;
@@ -171,36 +171,6 @@ export interface CotacaoItem {
   royalties: number;
 }
 
-export type StatusCotacao = 'rascunho' | 'pendente' | 'aprovado' | 'rejeitado';
-
-export interface Cotacao {
-  id: string;
-  leadId?: string;
-  vendedorId?: string;
-  produto?: Produto;
-  categoriaCanalId?: string;
-  percentualDescontoGlobal?: number;
-  itens?: CotacaoItem[];
-  mensalidadeIntegral?: number;
-  descontoGlobal?: number;
-  totalMensalidade?: number;
-  totalRoyalties?: number;
-  status: StatusCotacao | 'enviada' | 'aprovada' | 'rejeitada';
-  dataCriacao?: Timestamp;
-  dataAtualizacao?: Timestamp;
-  numero?: string;
-  nomeLead?: string;
-  tipoProduto?: 'cloudfy' | 'cplug';
-  pacoteCplugId?: string;
-  categoriaCanalNome?: string;
-  descontoPercentual?: number;
-  observacaoDesconto?: string;
-  itensCplug?: CotacaoItemCplug[];
-  valorTotal?: number;
-  createdAt?: any;
-  updatedAt?: any;
-}
-
 export interface CotacaoItemCplug {
   licencaId: string;
   nome: string;
@@ -209,4 +179,66 @@ export interface CotacaoItemCplug {
   valorUnitario: number;
   quantidade: number;
   selecionado: boolean;
+}
+
+export interface CotacaoAdicional {
+  adicionalId: string;
+  nome: string;
+  descricao?: string;
+  valor: number;
+  quantidade: number;
+  tipo: 'checkbox' | 'quantificavel';
+  selecionado: boolean;
+}
+
+export interface CotacaoParcelaServico {
+  numero: number;
+  valor: number;
+  dataVencimento: string;
+}
+
+export type StatusCotacao = 'rascunho' | 'enviada' | 'aprovada' | 'rejeitada';
+
+export interface Cotacao {
+  id: string;
+  leadId?: string;
+  vendedorId?: string;
+  produto?: Produto;
+  categoriaCanalId?: string;
+  categoriaCanalNome?: string;
+  percentualDescontoGlobal?: number;
+  percentualRoyalties?: number;
+  itens?: CotacaoItem[];
+  itensCplug?: CotacaoItemCplug[];
+  adicionais?: CotacaoAdicional[];
+  parcelasServicos?: CotacaoParcelaServico[];
+  mensalidadeIntegral?: number;
+  descontoGlobal?: number;
+  totalMensalidade?: number;
+  totalRoyalties?: number;
+  margemLiquida?: number;
+  status: StatusCotacao;
+  dataCriacao?: Timestamp;
+  dataAtualizacao?: Timestamp;
+  numero?: string;
+  nomeLead?: string;
+  tipoProduto?: 'cloudfy' | 'cplug';
+  pacoteCplugId?: string;
+  descontoPercentual?: number;
+  observacaoDesconto?: string;
+  valorTotal?: number;
+  valorServicos?: number;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface Adicional {
+  id: string;
+  nome: string;
+  descricao?: string;
+  valor: number;
+  tipo: 'checkbox' | 'quantificavel';
+  ativo: boolean;
+  createdAt?: any;
+  updatedAt?: any;
 }

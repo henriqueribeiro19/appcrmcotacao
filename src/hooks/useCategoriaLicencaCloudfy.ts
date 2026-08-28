@@ -32,7 +32,7 @@ export function useCategoriaLicencaCloudfy() {
 
   const remover = async (id: string) => {
     setLoading(true);
-    try { await categoriaLicencaCloudfyService.remover(id); setCategorias(prev => prev.filter(c => c.id !== id)); }
+    try { await categoriaLicencaCloudfyService.atualizar(id, { ativo: false }); setCategorias(prev => prev.filter(c => c.id !== id)); }
     catch (err) { setError('Erro ao remover categoria'); throw err; }
     finally { setLoading(false); }
   };

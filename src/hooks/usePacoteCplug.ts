@@ -40,7 +40,7 @@ export function usePacoteCplug() {
   const remover = async (id: string) => {
     setLoading(true);
     try {
-      await pacoteCplugService.remover(id);
+      await pacoteCplugService.atualizar(id, { ativo: false });
       setPacotes(prev => prev.filter(p => p.id !== id));
     } catch (err) { setError('Erro ao remover pacote Cplug'); throw err; }
     finally { setLoading(false); }

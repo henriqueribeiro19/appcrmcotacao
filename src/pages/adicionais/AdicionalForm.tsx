@@ -1,28 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useCategoriaCanal } from '../../hooks/useCategoriaCanal';
+import { useAdicional } from '../../hooks/useAdicional';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { ArrowLeft, Save, AlertTriangle, FolderOpen, Percent } from 'lucide-react';
+import { ArrowLeft, Save, AlertTriangle, Puzzle, CheckSquare, Hash } from 'lucide-react';
+import { parseValorMonetario } from '../../utils/calculos';
 
 interface FormData {
   nome: string;
   descricao: string;
-  percentualRoyalties: string;
+  valor: string;
+  tipo: 'checkbox' | 'quantificavel';
   ativo: boolean;
 }
 
-export function CategoriaForm() {
+export function AdicionalForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdicao = !!id;
-  const { categorias, loading: loadingCategorias, criar, atualizar } = useCategoriaCanal();
+  const { adicionais, loading: loadingAdicionais, criar, atualizar } = useAdicional();
 
   const [formData, setFormData] = useState<FormData>({
     nome: '',
     descricao: '',
-    percentualRoyalties: '30',
+    valor: '',
+    tipo: 'checkbox',
     ativo: true,
   });
   const [erros, setErros] = useState<Partial<Record<keyof FormData, string>>>({});
@@ -30,25 +33,27 @@ export function CategoriaForm() {
   const [erroGeral, setErroGeral] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isEdicao && categorias.length > 0) {
-      const categoria = categorias.find((c) => c.id === id);
-      if (categoria) {
+    if (isEdicao && adicionais.length > 0) {
+      const adicional = adicionais.find((a) => a.id === id);
+      if (adicional) {
         setFormData({
-          nome: categoria.nome,
-          descricao: categoria.descricao || '',
-          percentualRoyalties: (categoria.percentualRoyalties ?? 30).toString(),
-          ativo: categoria.ativo !== false,
+          nome: adicional.nome,
+          descricao: adicional.descricao || '',
+          valor: adicional.valor.toString().replace('.', ','),
+          tipo: adicional.tipo,
+          ativo: adicional.ativo !== false,
         });
       }
     }
-  }, [isEdicao, id, categorias]);
+  }, [isEdicao, id, adicionais]);
 
   const validar = (): boolean => {
     const novosErros: Partial<Record<keyof FormData, string>> = {};
     if (!formData.nome.trim()) novosErros.nome = 'Nome é obrigatório';
-    const pct = parseFloat(formData.percentualRoyalties);
-    if (isNaN(pct) || pct < 0 || pct > 100) {
-      novosErros.percentualRoyalties = 'Percentual deve ser entre 0 e 100';
+    if (!formData.valor.trim()) novosErros.valor = 'Valor é obrigatório';
+    else {
+      const v = parseValorMonetario(formData.valor);
+      if (v === null || v < 0) novosErros.valor = 'Informe um valor válido, por exemplo 1.234,56';
     }
     setErros(novosErros);
     return Object.keys(novosErros).length === 0;
@@ -63,14 +68,15 @@ export function CategoriaForm() {
       const payload = {
         nome: formData.nome.trim(),
         descricao: formData.descricao.trim() || undefined,
-        percentualRoyalties: parseFloat(formData.percentualRoyalties) || 30,
+        valor: parseValorMonetario(formData.valor)!,
+        tipo: formData.tipo,
         ativo: formData.ativo,
       };
       if (isEdicao) await atualizar(id!, payload);
       else await criar(payload);
-      navigate('/categorias');
+      navigate('/adicionais');
     } catch (err) {
-      setErroGeral('Erro ao salvar categoria.');
+      setErroGeral('Erro ao salvar adicional.');
       console.error(err);
     } finally {
       setSalvando(false);
@@ -82,7 +88,7 @@ export function CategoriaForm() {
     if (erros[field]) setErros((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  if (isEdicao && loadingCategorias) {
+  if (isEdicao && loadingAdicionais) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
@@ -93,12 +99,12 @@ export function CategoriaForm() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/categorias')} className="text-slate-400 hover:text-white">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/adicionais')} className="text-slate-400 hover:text-white">
           <ArrowLeft size={18} />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-white">{isEdicao ? 'Editar Categoria' : 'Nova Categoria'}</h1>
-          <p className="text-slate-400 mt-1">{isEdicao ? 'Atualize os dados' : 'Cadastre uma nova categoria de canal'}</p>
+          <h1 className="text-2xl font-bold text-white">{isEdicao ? 'Editar Serviço/Adicional' : 'Novo Serviço/Adicional'}</h1>
+          <p className="text-slate-400 mt-1">{isEdicao ? 'Atualize os dados' : 'Cadastre um novo serviço para inclusão nas propostas'}</p>
         </div>
       </div>
 
@@ -112,11 +118,11 @@ export function CategoriaForm() {
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Nome <span className="text-red-400">*</span></label>
             <div className="relative">
-              <FolderOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <Puzzle className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
               <Input
                 value={formData.nome}
                 onChange={(e) => handleChange('nome', e.target.value)}
-                placeholder="Ex: Indicação, Site, Instagram..."
+                placeholder="Ex: Serviço de ativação da base"
                 className={`pl-10 ${erros.nome ? 'border-red-500' : ''}`}
               />
             </div>
@@ -128,31 +134,49 @@ export function CategoriaForm() {
             <textarea
               value={formData.descricao}
               onChange={(e) => handleChange('descricao', e.target.value)}
-              placeholder="Descrição opcional..."
+              placeholder="Descrição do serviço..."
               rows={3}
               className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Percentual de Royalties (%) <span className="text-red-400">*</span>
-            </label>
-            <div className="relative max-w-xs">
-              <Percent className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-              <Input
-                value={formData.percentualRoyalties}
-                onChange={(e) => handleChange('percentualRoyalties', e.target.value)}
-                placeholder="30"
-                className={`pl-10 ${erros.percentualRoyalties ? 'border-red-500' : ''}`}
-              />
+            <label className="block text-sm font-medium text-slate-300 mb-2">Valor (R$) <span className="text-red-400">*</span></label>
+            <Input
+              value={formData.valor}
+              onChange={(e) => handleChange('valor', e.target.value)}
+              placeholder="0,00"
+              className={erros.valor ? 'border-red-500' : ''}
+            />
+            {erros.valor && <p className="mt-1 text-sm text-red-400">{erros.valor}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-3">Tipo</label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleChange('tipo', 'checkbox')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  formData.tipo === 'checkbox'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                }`}
+              >
+                <CheckSquare size={16} /> Único (Checkbox)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChange('tipo', 'quantificavel')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  formData.tipo === 'quantificavel'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                }`}
+              >
+                <Hash size={16} /> Quantificável
+              </button>
             </div>
-            {erros.percentualRoyalties && (
-              <p className="mt-1 text-sm text-red-400">{erros.percentualRoyalties}</p>
-            )}
-            <p className="mt-1 text-xs text-slate-500">
-              Ex: Ouro = 50%, Prata = 40%, Bronze = 30%. Cplug = 50%.
-            </p>
           </div>
 
           <div>
@@ -184,7 +208,7 @@ export function CategoriaForm() {
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/50">
-            <Button type="button" variant="outline" onClick={() => navigate('/categorias')}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={() => navigate('/adicionais')}>Cancelar</Button>
             <Button type="submit" disabled={salvando} className="flex items-center gap-2">
               <Save size={18} />{salvando ? 'Salvando...' : isEdicao ? 'Salvar' : 'Cadastrar'}
             </Button>

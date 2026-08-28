@@ -96,12 +96,12 @@ export function LicencasCplugList() {
         )}
       </Card>
 
-      <Modal isOpen={!!licencaParaRemover} onClose={() => setLicencaParaRemover(null)} title="Confirmar exclusão">
+      <Modal isOpen={!!licencaParaRemover} onClose={() => setLicencaParaRemover(null)} title="Desativar licença">
         <div className="space-y-4">
-          <p className="text-slate-300">Tem certeza que deseja remover esta licença?</p>
+          <p className="text-slate-300">A licença será preservada no histórico, mas deixará de aparecer em novas cotações. Deseja continuar?</p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setLicencaParaRemover(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleRemover} disabled={removendo} className="bg-red-600 hover:bg-red-700">{removendo ? 'Removendo...' : 'Remover'}</Button>
+            <Button variant="destructive" onClick={handleRemover} disabled={removendo} className="bg-red-600 hover:bg-red-700">{removendo ? 'Desativando...' : 'Desativar'}</Button>
           </div>
         </div>
       </Modal>

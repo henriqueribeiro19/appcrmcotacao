@@ -14,13 +14,13 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated() && (isAdmin() || isOwner(userId));
       allow create: if isAdmin();
-      allow update: if isAdmin() || isOwner(userId);
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
     match /leads/{leadId} {
       allow read: if isAuthenticated() && (isAdmin() || resource.data.responsavelId == request.auth.uid);
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (isAdmin() || resource.data.responsavelId == request.auth.uid);
+      allow create: if isAuthenticated() && (isAdmin() || request.resource.data.responsavelId == request.auth.uid);
+      allow update: if isAuthenticated() && (isAdmin() || (resource.data.responsavelId == request.auth.uid && request.resource.data.responsavelId == request.auth.uid));
       allow delete: if isAdmin();
     }
     match /staging/{id} {
@@ -28,28 +28,38 @@ service cloud.firestore {
     }
     match /licencas_cloudfy/{id} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create, update: if isAdmin();
+      allow delete: if false;
     }
     match /licencas_cplug/{id} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create, update: if isAdmin();
+      allow delete: if false;
     }
     match /pacotes_cplug/{id} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create, update: if isAdmin();
+      allow delete: if false;
     }
     match /categorias_canal/{id} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create, update: if isAdmin();
+      allow delete: if false;
     }
     match /categorias_licencas_cloudfy/{id} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
+    match /adicionais/{id} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin();
+      allow delete: if false;
     }
     match /cotacoes/{id} {
       allow read: if isAuthenticated() && (isAdmin() || resource.data.vendedorId == request.auth.uid);
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (isAdmin() || resource.data.vendedorId == request.auth.uid);
+      allow create: if isAuthenticated() && (isAdmin() || request.resource.data.vendedorId == request.auth.uid);
+      allow update: if isAuthenticated() && (isAdmin() || (resource.data.vendedorId == request.auth.uid && request.resource.data.vendedorId == request.auth.uid));
       allow delete: if isAdmin();
     }
   }
