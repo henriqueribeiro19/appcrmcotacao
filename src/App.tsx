@@ -22,6 +22,8 @@ import { CategoriaForm } from './pages/categorias/CategoriaForm';
 import { AdicionaisList } from './pages/adicionais/AdicionaisList';
 import { AdicionalForm } from './pages/adicionais/AdicionalForm';
 import { ArquivadosList } from './pages/clientes/ArquivadosList';
+import { LicencasAtivasCloudfyList } from './pages/clientes/LicencasAtivasCloudfyList';
+import { LicencaAtivaCloudfyForm } from './pages/clientes/LicencaAtivaCloudfyForm';
 import { UsuariosList } from './pages/usuarios/UsuariosList';
 import { UsuarioForm } from './pages/usuarios/UsuarioForm';
 import { RelatoriosDashboard } from './pages/relatorios/RelatoriosDashboard';
@@ -54,6 +56,9 @@ function App() {
               <Route path="/leads/:id" element={<LeadDetail />} />
               <Route path="/leads/arquivados" element={<ClientesArquivados />} />
               <Route path="/clientes" element={<ClientesArquivados />} />
+              <Route path="/clientes/licencas-ativas" element={<LicencasAtivasCloudfyList />} />
+              <Route path="/clientes/licencas-ativas/nova" element={<LicencaAtivaCloudfyForm />} />
+              <Route path="/clientes/licencas-ativas/editar/:id" element={<LicencaAtivaCloudfyForm />} />
               <Route path="/triagem" element={<StagingList />} />
               <Route path="/staging" element={<StagingList />} />
               <Route path="/funil" element={<FunilKanban />} />

@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
-import { Upload, FileSpreadsheet, Check, AlertCircle, ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
+import { Upload, FileSpreadsheet, Download, Check, AlertCircle, ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { isValidCNPJ, isValidEmail, isValidPhone } from '@/utils/validators';
@@ -27,12 +27,54 @@ const CAMPOS_SISTEMA: CampoMapeamento[] = [
   { chave: 'nomeFantasia', label: 'Nome Fantasia', obrigatorio: false },
   { chave: 'telefone', label: 'Telefone', obrigatorio: false },
   { chave: 'email', label: 'E-mail', obrigatorio: false },
+  { chave: 'inscricaoEstadual', label: 'Inscrição Estadual', obrigatorio: false },
+  { chave: 'regimeTributario', label: 'Regime Tributário', obrigatorio: false },
   { chave: 'segmento', label: 'Segmento', obrigatorio: false },
-  { chave: 'municipio', label: 'Município', obrigatorio: false },
-  { chave: 'bairro', label: 'Bairro', obrigatorio: false },
   { chave: 'porte', label: 'Porte', obrigatorio: false },
   { chave: 'capitalSocial', label: 'Capital Social', obrigatorio: false },
+  { chave: 'socios', label: 'Sócios', obrigatorio: false },
+  { chave: 'cep', label: 'CEP', obrigatorio: false },
+  { chave: 'logradouro', label: 'Logradouro', obrigatorio: false },
+  { chave: 'numero', label: 'Número', obrigatorio: false },
+  { chave: 'complemento', label: 'Complemento', obrigatorio: false },
+  { chave: 'bairro', label: 'Bairro', obrigatorio: false },
+  { chave: 'municipio', label: 'Município', obrigatorio: false },
+  { chave: 'uf', label: 'UF', obrigatorio: false },
 ];
+
+const MODELO_CABECALHOS = CAMPOS_SISTEMA.map((campo) => campo.chave);
+
+function baixarModelo() {
+  const instrucoes = [
+    ['Campo', 'Obrigatório', 'Como preencher'],
+    ['nome', 'Sim', 'Razão social da empresa, com pelo menos 3 caracteres'],
+    ['cnpj', 'Sim', '14 dígitos; pode usar pontuação (ex.: 12.345.678/0001-95)'],
+    ['nomeFantasia', 'Não', 'Nome comercial da empresa'],
+    ['telefone', 'Não', 'DDD + número; pode usar pontuação'],
+    ['email', 'Não', 'E-mail válido'],
+    ['inscricaoEstadual', 'Não', 'Inscrição Estadual da empresa'],
+    ['regimeTributario', 'Não', 'SIMEI, Simples Nacional, Lucro Real, Lucro Presumido ou Lucro Arbitrado'],
+    ['segmento', 'Não', 'Ex.: Restaurante, Lanchonete, Bar ou Padaria'],
+    ['porte', 'Não', 'Ex.: MEI, ME, EPP ou DEMAIS'],
+    ['capitalSocial', 'Não', 'Valor numérico; use ponto como separador decimal'],
+    ['socios', 'Não', 'Nomes dos sócios'],
+    ['cep', 'Não', 'CEP; pode usar hífen'],
+    ['logradouro', 'Não', 'Rua, avenida ou endereço'],
+    ['numero', 'Não', 'Número do endereço'],
+    ['complemento', 'Não', 'Complemento do endereço'],
+    ['bairro', 'Não', 'Bairro do estabelecimento'],
+    ['municipio', 'Não', 'Cidade do estabelecimento'],
+    ['uf', 'Não', 'UF com duas letras'],
+  ];
+  const workbook = XLSX.utils.book_new();
+  const modelo = XLSX.utils.aoa_to_sheet([MODELO_CABECALHOS]);
+  const instrucoesSheet = XLSX.utils.aoa_to_sheet(instrucoes);
+  modelo['!cols'] = MODELO_CABECALHOS.map((cabecalho) => ({ wch: Math.max(cabecalho.length + 2, 18) }));
+  instrucoesSheet['!cols'] = [{ wch: 18 }, { wch: 14 }, { wch: 72 }];
+  XLSX.utils.book_append_sheet(workbook, modelo, 'Modelo');
+  XLSX.utils.book_append_sheet(workbook, instrucoesSheet, 'Instruções');
+  XLSX.writeFile(workbook, 'modelo-importacao-leads.xlsx');
+}
 
 interface RegistroRevisao {
   raw: Record<string, unknown>;
@@ -120,11 +162,19 @@ export function ImportPlanilha({ isOpen, onClose, onImport }: ImportPlanilhaProp
       nomeFantasia: ['fantasia', 'nomefantasia', 'fant', 'apelido'],
       telefone: ['telefone', 'tel', 'fone', 'phone', 'contato', 'whatsapp'],
       email: ['email', 'e-mail', 'mail', 'correio'],
+      inscricaoEstadual: ['inscricaoestadual', 'inscricao_estadual', 'inscrição estadual', 'ie'],
+      regimeTributario: ['regimetributario', 'regime_tributario', 'regime tributario', 'regime tributário'],
       segmento: ['segmento', 'tipo', 'ramo', 'atividade', 'setor'],
-      municipio: ['municipio', 'cidade', 'município', 'city'],
-      bairro: ['bairro', 'neighborhood'],
       porte: ['porte', 'tamanho', 'size'],
       capitalSocial: ['capital', 'capitalsocial', 'capital_social'],
+      socios: ['socios', 'sócios', 'socio', 'sócio'],
+      cep: ['cep', 'codigo postal', 'código postal'],
+      logradouro: ['logradouro', 'endereco', 'endereço', 'rua', 'avenida'],
+      numero: ['numero', 'número'],
+      complemento: ['complemento'],
+      bairro: ['bairro', 'neighborhood'],
+      municipio: ['municipio', 'cidade', 'município', 'city'],
+      uf: ['uf', 'estado'],
     };
     return map[chave] || [chave];
   };
@@ -204,19 +254,36 @@ export function ImportPlanilha({ isOpen, onClose, onImport }: ImportPlanilhaProp
 
     setImportando(true);
     try {
-      const dadosParaImportar = validos.map((r) => ({
-        razaoSocial: r.mapeado.nome,
-        nomeFantasia: r.mapeado.nomeFantasia || '',
-        cnpj: r.mapeado.cnpj?.replace(/\D/g, '') || '',
-        telefone: r.mapeado.telefone?.replace(/\D/g, '') || '',
-        email: r.mapeado.email || '',
-        segmento: r.mapeado.segmento || '',
-        municipio: r.mapeado.municipio || '',
-        bairro: r.mapeado.bairro || '',
-        porte: r.mapeado.porte || '',
-        capitalSocial: r.mapeado.capitalSocial ? Number(r.mapeado.capitalSocial) : undefined,
-        bruto: r.raw,
-      }));
+      const dadosParaImportar = validos.map((r) => {
+        const capitalSocialTexto = r.mapeado.capitalSocial?.trim() || '';
+        const capitalSocial = capitalSocialTexto
+          ? Number(capitalSocialTexto.includes(',')
+            ? capitalSocialTexto.replace(/\./g, '').replace(',', '.')
+            : capitalSocialTexto)
+          : undefined;
+
+        return {
+          razaoSocial: r.mapeado.nome,
+          nomeFantasia: r.mapeado.nomeFantasia || '',
+          cnpj: r.mapeado.cnpj?.replace(/\D/g, '') || '',
+          telefone: r.mapeado.telefone?.replace(/\D/g, '') || '',
+          email: r.mapeado.email || '',
+          inscricaoEstadual: r.mapeado.inscricaoEstadual || '',
+          regimeTributario: r.mapeado.regimeTributario || undefined,
+          segmento: r.mapeado.segmento || '',
+          socios: r.mapeado.socios || '',
+          cep: r.mapeado.cep?.replace(/\D/g, '') || '',
+          logradouro: r.mapeado.logradouro || '',
+          numero: r.mapeado.numero || '',
+          complemento: r.mapeado.complemento || '',
+          uf: r.mapeado.uf?.toUpperCase() || '',
+          municipio: r.mapeado.municipio || '',
+          bairro: r.mapeado.bairro || '',
+          porte: r.mapeado.porte || '',
+          capitalSocial: Number.isNaN(capitalSocial) ? undefined : capitalSocial,
+          bruto: r.raw,
+        };
+      });
 
       onImport(dadosParaImportar);
       toast.success(`${validos.length} de ${registrosRevisao.length} registros importados!`);
@@ -274,6 +341,15 @@ export function ImportPlanilha({ isOpen, onClose, onImport }: ImportPlanilhaProp
       {/* ETAPA 1: UPLOAD */}
       {etapa === 'upload' && (
         <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
+            <div className="flex items-start gap-2 text-sm text-slate-300">
+              <FileSpreadsheet size={18} className="mt-0.5 shrink-0 text-blue-400" />
+              <p>Use o modelo com os nomes de colunas corretos para evitar erros no mapeamento.</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={baixarModelo} className="shrink-0">
+              <Download size={15} className="mr-2" />Baixar modelo
+            </Button>
+          </div>
           <div
             onClick={() => inputRef.current?.click()}
             className="border-2 border-dashed border-slate-700 rounded-xl p-10 text-center cursor-pointer hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-colors"

@@ -15,8 +15,9 @@ import {
   Trash2,
   ArrowRight,
   AlertTriangle,
+  RotateCcw,
 } from 'lucide-react';
-import type { Staging, Lead } from '@/types';
+import type { Staging, Lead, RegimeTributario } from '@/types';
 
 const statusConfig = {
   pendente: { label: 'Pendente', color: 'text-amber-400' as const },
@@ -52,12 +53,23 @@ export function StagingList() {
       fonte: 'upload_xlsx',
       bruto: (row.bruto && typeof row.bruto === 'object' ? row.bruto : row) as Record<string, unknown>,
       nome: String(row.razaoSocial || row.nome || '').trim(),
+      nomeFantasia: String(row.nomeFantasia || '').trim(),
       cnpj: String(row.cnpj || '').replace(/\D/g, ''),
       telefone: String(row.telefone || '').replace(/\D/g, ''),
       email: String(row.email || '').trim(),
+      inscricaoEstadual: String(row.inscricaoEstadual || '').trim(),
+      regimeTributario: String(row.regimeTributario || '').trim() as RegimeTributario || undefined,
       segmento: String(row.segmento || '').trim(),
+      socios: String(row.socios || '').trim(),
+      cep: String(row.cep || '').replace(/\D/g, ''),
+      uf: String(row.uf || '').trim().toUpperCase(),
+      logradouro: String(row.logradouro || '').trim(),
+      numero: String(row.numero || '').trim(),
+      complemento: String(row.complemento || '').trim(),
       municipio: String(row.municipio || row.cidade || '').trim(),
       bairro: String(row.bairro || '').trim(),
+      porte: String(row.porte || '').trim().toUpperCase() as Lead['porte'],
+      capitalSocial: typeof row.capitalSocial === 'number' ? row.capitalSocial : undefined,
     }));
 
     try {
@@ -82,11 +94,23 @@ export function StagingList() {
     try {
       const leadData: Omit<Lead, 'id' | 'criadoEm' | 'atualizadoEm'> = {
         razaoSocial: item.nome,
-        nomeFantasia: '',
+        nomeFantasia: item.nomeFantasia || '',
         cnpj: item.cnpj,
         telefone: item.telefone || '',
         email: item.email || '',
+        inscricaoEstadual: item.inscricaoEstadual || '',
+        regimeTributario: item.regimeTributario,
         segmento: item.segmento || '',
+        socios: item.socios || '',
+        cep: item.cep || '',
+        uf: item.uf || '',
+        logradouro: item.logradouro || '',
+        numero: item.numero || '',
+        complemento: item.complemento || '',
+        municipio: item.municipio || '',
+        bairro: item.bairro || '',
+        porte: item.porte || '',
+        capitalSocial: item.capitalSocial,
         statusFunil: 'novo',
         produtoSugerido: item.produtoSugerido,
         classificacao: item.classificacao,
@@ -123,6 +147,17 @@ export function StagingList() {
       fetchStaging();
     } catch {
       toast.error('Erro ao excluir');
+    }
+  };
+
+  const handleReactivate = async (id: string) => {
+    if (!confirm('Deseja reativar este lead? Ele voltará para a triagem pendente.')) return;
+    try {
+      await stagingService.reactivate(id);
+      toast.success('Lead reativado e movido para pendentes');
+      fetchStaging();
+    } catch {
+      toast.error('Erro ao reativar lead');
     }
   };
 
@@ -263,6 +298,15 @@ export function StagingList() {
                             title="Ver lead"
                           >
                             <ArrowRight size={16} />
+                          </button>
+                        )}
+                        {item.status === 'descartado' && (
+                          <button
+                            onClick={() => handleReactivate(item.id)}
+                            className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
+                            title="Reativar"
+                          >
+                            <RotateCcw size={16} />
                           </button>
                         )}
                         <button

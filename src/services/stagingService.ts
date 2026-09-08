@@ -6,13 +6,14 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   query,
   where,
   orderBy,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase';
-import type { Staging, Lead, Classificacao, Produto } from '@/types';
+import type { Staging, Lead, Classificacao } from '@/types';
 
 const STAGING_COLLECTION = 'staging';
 
@@ -37,12 +38,6 @@ function getClassificacao(score: number): Classificacao {
   if (score >= 80) return 'A';
   if (score >= 60) return 'B';
   return 'C';
-}
-
-function getProdutoSugerido(segmento?: string): Produto {
-  if (!segmento) return 'qualificar';
-  const segmentosCloudfy = ['Restaurante', 'Lanchonete', 'Bar', 'Padaria'];
-  return segmentosCloudfy.includes(segmento) ? 'cloudfy' : 'cplug';
 }
 
 export const stagingService = {
@@ -75,7 +70,7 @@ export const stagingService = {
       ...data,
       score,
       classificacao: getClassificacao(score),
-      produtoSugerido: getProdutoSugerido(data.segmento),
+      produtoSugerido: 'qualificar',
       status: 'pendente',
       criadoEm: serverTimestamp(),
     });
@@ -110,6 +105,13 @@ export const stagingService = {
     await this.update(id, {
       status: 'descartado',
       motivoDescarte: motivo,
+    });
+  },
+
+  async reactivate(id: string) {
+    await updateDoc(doc(db, STAGING_COLLECTION, id), {
+      status: 'pendente',
+      motivoDescarte: deleteField(),
     });
   },
 

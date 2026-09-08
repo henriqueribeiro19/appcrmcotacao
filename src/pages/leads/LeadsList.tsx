@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Tag';
 import { ScoreBadge } from '@/components/ScoreBadge';
 import { formatCNPJ, formatDate } from '@/utils/formatters';
-import { Plus, Search, Trash2, PencilLine, Eye } from 'lucide-react';
+import { Plus, Search, Trash2, PencilLine, Eye, ArrowDown, ArrowUp } from 'lucide-react';
 
 const statusLabels: Record<string, string> = {
   novo: 'Novo', contato: 'Contato', proposta: 'Proposta',
@@ -23,6 +23,14 @@ const statusColors: Record<string, 'default' | 'success' | 'warning' | 'danger' 
 
 const ITEMS_PER_PAGE = 10;
 
+function timestampToMillis(value: unknown): number {
+  if (!value || typeof value !== 'object') return 0;
+
+  const timestamp = value as { toMillis?: () => number; seconds?: number };
+  if (typeof timestamp.toMillis === 'function') return timestamp.toMillis();
+  return typeof timestamp.seconds === 'number' ? timestamp.seconds * 1000 : 0;
+}
+
 export function LeadsList() {
   const navigate = useNavigate();
   const { userProfile } = useAuth();
@@ -31,6 +39,7 @@ export function LeadsList() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [segmentoFilter, setSegmentoFilter] = useState('todos');
+  const [updatedSort, setUpdatedSort] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -58,13 +67,20 @@ export function LeadsList() {
     });
   }, [leads, search, statusFilter, segmentoFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const sortedLeads = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      const difference = timestampToMillis(a.atualizadoEm || a.criadoEm) - timestampToMillis(b.atualizadoEm || b.criadoEm);
+      return updatedSort === 'asc' ? difference : -difference;
+    });
+  }, [filtered, updatedSort]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedLeads.length / ITEMS_PER_PAGE));
   const pageStart = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedLeads = filtered.slice(pageStart, pageStart + ITEMS_PER_PAGE);
+  const paginatedLeads = sortedLeads.slice(pageStart, pageStart + ITEMS_PER_PAGE);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, segmentoFilter]);
+  }, [search, statusFilter, segmentoFilter, updatedSort]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Deseja excluir este lead?')) return;
@@ -144,7 +160,17 @@ export function LeadsList() {
                   <th className="pb-3 pr-4">Score</th>
                   <th className="pb-3 pr-4">Status</th>
                   <th className="pb-3 pr-4">Observação</th>
-                  <th className="pb-3 pr-4">Atualizado em</th>
+                  <th className="pb-3 pr-4">
+                    <button
+                      type="button"
+                      onClick={() => setUpdatedSort((sort) => sort === 'desc' ? 'asc' : 'desc')}
+                      className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+                      title={`Ordenar por atualização: ${updatedSort === 'desc' ? 'mais antigos primeiro' : 'mais recentes primeiro'}`}
+                    >
+                      Atualizado em
+                      {updatedSort === 'desc' ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
+                    </button>
+                  </th>
                   <th className="pb-3 text-right">Ações</th>
                 </tr>
               </thead>
@@ -211,9 +237,9 @@ export function LeadsList() {
         )}
       </Card>
 
-      {filtered.length > 0 && (
+      {sortedLeads.length > 0 && (
         <div className="flex items-center justify-between text-sm text-slate-400">
-          <span>Mostrando {Math.min(filtered.length, pageStart + 1)}-{Math.min(filtered.length, pageStart + ITEMS_PER_PAGE)} de {filtered.length}</span>
+          <span>Mostrando {Math.min(sortedLeads.length, pageStart + 1)}-{Math.min(sortedLeads.length, pageStart + ITEMS_PER_PAGE)} de {sortedLeads.length}</span>
           <div className="flex items-center gap-2">
             <button
               type="button"

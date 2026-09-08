@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { useLead } from '@/hooks/useLead';
+import { useRole } from '@/hooks/useRole';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -12,7 +13,7 @@ import { InteracaoItem } from '@/components/InteracaoItem';
 import { isValidCNPJ, isValidEmail, isValidCEP, isValidPhone } from '@/utils/validators';
 import { formatCNPJ, formatCEP, formatPhone } from '@/utils/formatters';
 import { Save, ArrowLeft, User, MessageSquare, FileText, Plus } from 'lucide-react';
-import type { Lead, Interacao } from '@/types';
+import type { Lead, Interacao, RegimeTributario } from '@/types';
 
 const segmentos = [
   { value: '', label: 'Selecione...' },
@@ -20,6 +21,12 @@ const segmentos = [
   { value: 'Lanchonete', label: 'Lanchonete' },
   { value: 'Bar', label: 'Bar' },
   { value: 'Padaria', label: 'Padaria' },
+  { value: 'Confeitaria', label: 'Confeitaria' },
+  { value: 'Cafeteria', label: 'Cafeteria' },
+  { value: 'Dark kitchen', label: 'Dark kitchen' },
+  { value: 'Pub', label: 'Pub' },
+  { value: 'Hamburgueria', label: 'Hamburgueria' },
+  { value: 'Pizzaria', label: 'Pizzaria' },
   { value: 'Supermercado', label: 'Supermercado' },
   { value: 'Loja', label: 'Loja' },
   { value: 'Outro', label: 'Outro' },
@@ -31,6 +38,15 @@ const portes = [
   { value: 'ME', label: 'ME' },
   { value: 'EPP', label: 'EPP' },
   { value: 'DEMAIS', label: 'DEMAIS' },
+];
+
+const regimesTributarios = [
+  { value: '', label: 'Selecione...' },
+  { value: 'SIMEI', label: 'SIMEI' },
+  { value: 'Simples Nacional', label: 'Simples Nacional' },
+  { value: 'Lucro Real', label: 'Lucro Real' },
+  { value: 'Lucro Presumido', label: 'Lucro Presumido' },
+  { value: 'Lucro Arbitrado', label: 'Lucro Arbitrado' },
 ];
 
 const statusFunilOptions = [
@@ -58,6 +74,8 @@ const initialFormState: Partial<Lead> = {
   cnpj: '',
   telefone: '',
   email: '',
+  inscricaoEstadual: '',
+  regimeTributario: undefined,
   segmento: '',
   porte: '',
   capitalSocial: undefined,
@@ -93,7 +111,8 @@ export function LeadForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { userProfile } = useAuth();
-  const { lead, loading, fetchLead, createLead, updateLead, addInteracao } = useLead();
+  const { isAdmin } = useRole();
+  const { leads, lead, loading, fetchLeads, fetchLead, createLead, updateLead, addInteracao } = useLead();
   const [aba, setAba] = useState<Aba>('dados');
   const [saving, setSaving] = useState(false);
   const [formLoaded, setFormLoaded] = useState(false);
@@ -114,6 +133,14 @@ export function LeadForm() {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (isAdmin) {
+      fetchLeads();
+    } else if (userProfile?.uid) {
+      fetchLeads(userProfile.uid);
+    }
+  }, [fetchLeads, isAdmin, userProfile]);
+
   // Popula o form quando o lead é carregado (edição)
   useEffect(() => {
     if (id && lead && !formLoaded) {
@@ -124,6 +151,9 @@ export function LeadForm() {
         nomeFantasia: lead.nomeFantasia || '',
         telefone: lead.telefone || '',
         email: lead.email || '',
+        tipoEmpresa: lead.tipoEmpresa || 'matriz',
+        inscricaoEstadual: lead.inscricaoEstadual || '',
+        regimeTributario: lead.regimeTributario,
         segmento: lead.segmento || '',
         porte: lead.porte || '',
         socios: lead.socios || '',
@@ -199,9 +229,30 @@ export function LeadForm() {
     if (form.telefone && !isValidPhone(form.telefone)) {
       newErrors.telefone = 'Telefone inválido';
     }
+    if (form.tipoEmpresa === 'filial' && !form.matrizCnpj) {
+      newErrors.matrizCnpj = 'Selecione a matriz associada';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  const formatarCapitalSocial = (valor?: number) => {
+    if (valor === undefined || valor === null) return '';
+    return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const atualizarCapitalSocial = (valor: string) => {
+    const somenteNumeros = valor.replace(/\D/g, '');
+    if (!somenteNumeros) {
+      setForm({ ...form, capitalSocial: undefined });
+      return;
+    }
+    setForm({ ...form, capitalSocial: Number(somenteNumeros) / 100 });
+  };
+
+  const matrizesDisponiveis = leads.filter((item) =>
+    item.id !== id && item.tipoEmpresa !== 'filial'
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,64 +375,134 @@ export function LeadForm() {
           <div className="space-y-6">
             <Card>
               <h3 className="text-lg font-semibold text-white mb-4">Dados da Empresa</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Input
-                  label="Razão Social *"
-                  value={form.razaoSocial || ''}
-                  onChange={(e) => setForm({ ...form, razaoSocial: e.target.value })}
-                  error={errors.razaoSocial}
-                  containerClassName="md:col-span-2"
-                />
-                <Input
-                  label="Nome Fantasia"
-                  value={form.nomeFantasia || ''}
-                  onChange={(e) => setForm({ ...form, nomeFantasia: e.target.value })}
-                />
-                <Input
-                  label="CNPJ *"
-                  value={form.cnpj ? formatCNPJ(form.cnpj) : ''}
-                  onChange={(e) => setForm({ ...form, cnpj: e.target.value.replace(/\D/g, '') })}
-                  error={errors.cnpj}
-                  placeholder="00.000.000/0000-00"
-                />
-                <Input
-                  label="Telefone"
-                  value={form.telefone ? formatPhone(form.telefone) : ''}
-                  onChange={(e) => setForm({ ...form, telefone: e.target.value.replace(/\D/g, '') })}
-                  error={errors.telefone}
-                  placeholder="(00) 00000-0000"
-                />
-                <Input
-                  label="Email"
-                  type="email"
-                  value={form.email || ''}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  error={errors.email}
-                />
-                <Select
-                  label="Segmento"
-                  value={form.segmento || ''}
-                  onChange={(e) => setForm({ ...form, segmento: e.target.value })}
-                  options={segmentos}
-                />
-                <Select
-                  label="Porte"
-                  value={form.porte || ''}
-                  onChange={(e) => setForm({ ...form, porte: e.target.value as Lead['porte'] })}
-                  options={portes}
-                />
-                <Input
-                  label="Capital Social"
-                  type="number"
-                  value={form.capitalSocial || ''}
-                  onChange={(e) => setForm({ ...form, capitalSocial: Number(e.target.value) || undefined })}
-                />
-                <div className="md:col-span-2">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <Input
+                    label="Razão Social *"
+                    value={form.razaoSocial || ''}
+                    onChange={(e) => setForm({ ...form, razaoSocial: e.target.value })}
+                    error={errors.razaoSocial}
+                    containerClassName="md:col-span-2"
+                  />
+                  <Input
+                    label="Nome Fantasia"
+                    value={form.nomeFantasia || ''}
+                    onChange={(e) => setForm({ ...form, nomeFantasia: e.target.value })}
+                  />
+                </div>
+
+                <div className="border-t border-slate-800 pt-4">
+                  <span className="mb-2 block text-sm font-medium text-slate-300">Tipo de Empresa</span>
+                  <div className="flex flex-wrap gap-3">
+                    {(['matriz', 'filial'] as const).map((tipo) => (
+                      <label
+                        key={tipo}
+                        className={`flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-2.5 text-sm transition-colors ${
+                          (form.tipoEmpresa || 'matriz') === tipo
+                            ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
+                            : 'border-slate-700 text-slate-400 hover:border-slate-600 hover:text-white'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="tipoEmpresa"
+                          value={tipo}
+                          checked={(form.tipoEmpresa || 'matriz') === tipo}
+                          onChange={() => setForm({
+                            ...form,
+                            tipoEmpresa: tipo,
+                            matrizCnpj: tipo === 'matriz' ? '' : form.matrizCnpj,
+                          })}
+                          className="h-4 w-4 border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500/20"
+                        />
+                        {tipo === 'matriz' ? 'Matriz' : 'Filial'}
+                      </label>
+                    ))}
+                  </div>
+                  {(form.tipoEmpresa || 'matriz') === 'filial' && (
+                    <div className="mt-4 border-t border-slate-800 pt-4">
+                      <Select
+                        label="Matriz associada (CNPJ)"
+                        value={form.matrizCnpj || ''}
+                        onChange={(e) => setForm({ ...form, matrizCnpj: e.target.value })}
+                        options={[
+                          { value: '', label: 'Selecione a matriz...' },
+                          ...matrizesDisponiveis.map((matriz) => ({
+                            value: matriz.cnpj,
+                            label: `${matriz.razaoSocial} - ${formatCNPJ(matriz.cnpj)}`,
+                          })),
+                        ]}
+                      />
+                      {errors.matrizCnpj && <p className="mt-1.5 text-xs text-red-400">{errors.matrizCnpj}</p>}
+                      {matrizesDisponiveis.length === 0 && (
+                        <p className="mt-1.5 text-xs text-amber-400">Nenhuma matriz cadastrada está disponível para associação.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <Input
+                    label="CNPJ *"
+                    value={form.cnpj ? formatCNPJ(form.cnpj) : ''}
+                    onChange={(e) => setForm({ ...form, cnpj: e.target.value.replace(/\D/g, '') })}
+                    error={errors.cnpj}
+                    placeholder="00.000.000/0000-00"
+                  />
+                  <Input
+                    label="Inscrição Estadual"
+                    value={form.inscricaoEstadual || ''}
+                    onChange={(e) => setForm({ ...form, inscricaoEstadual: e.target.value })}
+                    placeholder="Ex.: 123.456.789.000"
+                  />
+                  <Select
+                    label="Regime Tributário"
+                    value={form.regimeTributario || ''}
+                    onChange={(e) => setForm({ ...form, regimeTributario: (e.target.value || undefined) as RegimeTributario | undefined })}
+                    options={regimesTributarios}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <Input
+                    label="Telefone"
+                    value={form.telefone ? formatPhone(form.telefone) : ''}
+                    onChange={(e) => setForm({ ...form, telefone: e.target.value.replace(/\D/g, '') })}
+                    error={errors.telefone}
+                    placeholder="(00) 00000-0000"
+                  />
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={form.email || ''}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    error={errors.email}
+                  />
+                  <Select
+                    label="Segmento"
+                    value={form.segmento || ''}
+                    onChange={(e) => setForm({ ...form, segmento: e.target.value })}
+                    options={segmentos}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <Select
+                    label="Porte"
+                    value={form.porte || ''}
+                    onChange={(e) => setForm({ ...form, porte: e.target.value as Lead['porte'] })}
+                    options={portes}
+                  />
+                  <Input
+                    label="Capital Social"
+                    value={formatarCapitalSocial(form.capitalSocial)}
+                    onChange={(e) => atualizarCapitalSocial(e.target.value)}
+                    placeholder="0,00"
+                  />
                   <Input
                     label="Sócios"
                     value={form.socios || ''}
                     onChange={(e) => setForm({ ...form, socios: e.target.value })}
-                    containerClassName="md:col-span-2"
                   />
                 </div>
               </div>

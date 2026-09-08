@@ -41,7 +41,7 @@ export const leadService = {
 
   async create(data: Omit<Lead, 'id' | 'criadoEm' | 'atualizadoEm'>) {
     const docRef = await addDoc(collection(db, LEADS_COLLECTION), {
-      ...data,
+      ...limparUndefined(data as unknown as Record<string, unknown>),
       interacoes: [],
       arquivado: false,
       dataArquivamento: null,
@@ -54,7 +54,7 @@ export const leadService = {
   async update(id: string, data: Partial<Lead>) {
     const docRef = doc(db, LEADS_COLLECTION, id);
     await updateDoc(docRef, {
-      ...data,
+      ...limparUndefined(data as unknown as Record<string, unknown>),
       atualizadoEm: serverTimestamp(),
     });
   },

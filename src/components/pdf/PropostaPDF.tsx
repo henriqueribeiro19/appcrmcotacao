@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#059669',
+    backgroundColor: '#2563eb',
     padding: 8,
   },
   tableHeaderCell: {
@@ -138,17 +138,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f1f5f9',
     padding: 10,
     borderTopWidth: 2,
-    borderTopColor: '#059669',
+    borderTopColor: '#2563eb',
   },
   totalLabel: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#0f172a',
+    color: '#000000',
   },
   totalValue: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#059669',
+    color: '#000000',
     textAlign: 'right',
   },
   paymentInfo: {
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     padding: 15,
     backgroundColor: '#f8fafc',
     borderLeftWidth: 3,
-    borderLeftColor: '#059669',
+    borderLeftColor: '#2563eb',
   },
   confidentialityTitle: {
     fontSize: 11,

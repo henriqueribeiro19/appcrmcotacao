@@ -51,6 +51,11 @@ service cloud.firestore {
       allow create, update: if isAdmin();
       allow delete: if false;
     }
+    match /clientes_licencas_cloudfy/{id} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
     match /adicionais/{id} {
       allow read: if isAuthenticated();
       allow create, update: if isAdmin();

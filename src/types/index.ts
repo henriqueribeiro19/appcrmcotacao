@@ -17,6 +17,7 @@ export type StatusFunil = 'novo' | 'contato' | 'proposta' | 'negociacao' | 'fech
 export type Classificacao = 'A' | 'B' | 'C';
 export type Produto = 'cloudfy' | 'cplug' | 'qualificar';
 export type CanalOrigem = 'scraping' | 'upload_xlsx' | 'indicacao' | 'site' | 'manual';
+export type RegimeTributario = 'SIMEI' | 'Simples Nacional' | 'Lucro Real' | 'Lucro Presumido' | 'Lucro Arbitrado';
 
 export interface Interacao {
   id: string;
@@ -34,6 +35,8 @@ export interface Lead {
   cnpj: string;
   telefone?: string;
   email?: string;
+  inscricaoEstadual?: string;
+  regimeTributario?: RegimeTributario;
   municipio?: string;
   segmento?: string;
   porte?: 'MEI' | 'ME' | 'EPP' | 'DEMAIS' | '';
@@ -77,9 +80,20 @@ export interface Staging {
   cnpj?: string;
   telefone?: string;
   email?: string;
+  inscricaoEstadual?: string;
+  regimeTributario?: RegimeTributario;
+  nomeFantasia?: string;
   segmento?: string;
   municipio?: string;
   bairro?: string;
+  porte?: 'MEI' | 'ME' | 'EPP' | 'DEMAIS' | '';
+  capitalSocial?: number;
+  socios?: string;
+  cep?: string;
+  uf?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
   score: number;
   classificacao: Classificacao;
   produtoSugerido: Produto;
@@ -132,6 +146,40 @@ export interface CategoriaLicencaCloudfy {
   nome: string;
   ativo: boolean;
   ordem?: number;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export type StatusClienteLicencaCloudfy = 'ativa' | 'inativa' | 'pendente' | 'expirada';
+
+export interface ModuloClienteLicenca {
+  ativo: boolean;
+  quantidade: number;
+  label?: string;
+}
+
+export interface ClienteLicencaCloudfy {
+  id: string;
+  clienteId?: string;
+  clienteNome: string;
+  nomeFantasia?: string;
+  cnpj?: string;
+  licencaId?: string;
+  licencaNome: string;
+  categoriaId?: string;
+  categoriaNome?: string;
+  quantidade: number;
+  valorMensal: number;
+  valorAnual?: number;
+  dataAtivacao?: string;
+  dataRenovacao?: string;
+  status: StatusClienteLicencaCloudfy;
+  observacoes?: string;
+  responsavel?: string;
+  unidade?: string;
+  contrato?: string;
+  modulos?: Record<string, ModuloClienteLicenca | boolean>;
+  ativo?: boolean;
   createdAt?: any;
   updatedAt?: any;
 }

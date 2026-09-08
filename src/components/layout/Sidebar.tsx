@@ -9,6 +9,7 @@ const menuItems = [
   { path: '/triagem', label: 'Triagem', icon: Filter },
   { path: '/funil', label: 'Funil', icon: Kanban },
   { path: '/clientes', label: 'Clientes', icon: Archive },
+  { path: '/clientes/licencas-ativas', label: 'Licenças Ativas', icon: Key },
   { path: '/cotacoes', label: 'Cotações', icon: FileText },
   { path: '/pacotes', label: 'Pacotes', icon: Package },
   { path: '/adicionais', label: 'Adicionais', icon: Puzzle },

@@ -6,13 +6,15 @@ interface InputProps {
   placeholder?: string;
   error?: string;
   maxLength?: number;
+  min?: number | string;
+  step?: number | string;
   className?: string;
   containerClassName?: string;
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
   readOnly?: boolean;
 }
 
-export function Input({ label, type = 'text', value, onChange, placeholder, error, maxLength, className = '', containerClassName = '', onKeyDown, readOnly = false }: InputProps) {
+export function Input({ label, type = 'text', value, onChange, placeholder, error, maxLength, min, step, className = '', containerClassName = '', onKeyDown, readOnly = false }: InputProps) {
   return (
     <div className={`w-full ${containerClassName}`}>
       {label && (
@@ -26,6 +28,8 @@ export function Input({ label, type = 'text', value, onChange, placeholder, erro
         onChange={onChange}
         placeholder={placeholder}
         maxLength={maxLength}
+        min={min}
+        step={step}
         onKeyDown={onKeyDown}
         readOnly={readOnly}
         className={`${className} w-full bg-slate-850 border rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-colors ${

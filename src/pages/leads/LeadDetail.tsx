@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { pdf } from '@react-pdf/renderer';
 import { useCotacao } from '../../hooks/useCotacao';
 import { useLead } from '../../hooks/useLead';
+import { useCategoriaCanal } from '../../hooks/useCategoriaCanal';
+import { useAdicional } from '../../hooks/useAdicional';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Tag } from '../../components/ui/Tag';
-import { ArrowLeft, AlertTriangle, Building2, Calendar, Calculator, Eye, FileText, Mail, MapPin, Phone, Plus, TagIcon, User } from 'lucide-react';
+import { PropostaPDF } from '../../components/pdf/PropostaPDF';
+import { ArrowLeft, AlertTriangle, Building2, Calendar, Calculator, FileText, Mail, MapPin, Phone, Plus, Printer, TagIcon, User } from 'lucide-react';
 import type { Lead as LeadData, StatusFunil } from '../../types';
 import { leadPodeReceberCotacao, rotulosStatusCotacao } from '../../utils/cotacaoRegras';
 
@@ -43,6 +47,8 @@ export function LeadDetail() {
   const { id } = useParams<{ id: string }>();
   const { fetchLead } = useLead();
   const { fetchCotacoesPorLead } = useCotacao();
+  const { categorias } = useCategoriaCanal();
+  const { adicionais: adicionaisDisponiveis } = useAdicional();
   const [lead, setLead] = useState<LeadView | null>(null);
   const [abaAtiva, setAbaAtiva] = useState<Aba>('info');
   const [cotacoes, setCotacoes] = useState<any[]>([]);
@@ -85,6 +91,32 @@ export function LeadDetail() {
   const formatarValor = (valor: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
   const novaCotacao = () => navigate(`/cotacoes/nova?leadId=${lead.id}`);
 
+  const handleAbrirPDF = async (cotacao: any) => {
+    if (!lead) return;
+
+    const novaAba = window.open('', '_blank');
+    if (!novaAba) return;
+
+    novaAba.document.title = 'Gerando proposta...';
+
+    try {
+      const documento = (
+        <PropostaPDF
+          cotacao={cotacao}
+          lead={lead as any}
+          categoriaCanal={categorias.find((item) => item.id === cotacao.categoriaCanalId)}
+          adicionaisDisponiveis={adicionaisDisponiveis}
+        />
+      );
+
+      const arquivo = await pdf(documento).toBlob();
+      novaAba.location.href = URL.createObjectURL(arquivo);
+    } catch (err) {
+      novaAba.close();
+      console.error('Erro ao gerar PDF da cotação:', err);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -109,7 +141,7 @@ export function LeadDetail() {
 
       {abaAtiva === 'historico' && <Card><h3 className="text-sm font-semibold text-slate-300 uppercase mb-4">Histórico</h3><p className="text-slate-300">Lead criado em {formatarData(lead.createdAt)}.</p><p className="text-slate-300 mt-3">Fase atual: {fase.label}.</p></Card>}
 
-      {abaAtiva === 'propostas' && <div className="space-y-4"><div className="flex items-center justify-between"><div><h3 className="text-lg font-semibold text-white">Propostas Comerciais</h3><p className="text-slate-400 text-sm">Cotações vinculadas a este lead</p></div>{podeCriarCotacao && <Button size="sm" onClick={novaCotacao}><Plus size={16} className="mr-2" />Nova Cotação</Button>}</div>{!podeCriarCotacao && <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg flex gap-3 text-amber-400 text-sm"><AlertTriangle size={18} className="shrink-0" />Cotação indisponível na fase {rotulosStatusCotacao[lead.fase]}. Avance para Contato, Proposta ou Negociação.</div>}<Card className="overflow-hidden">{carregandoCotacoes ? <div className="p-8 text-center text-slate-400">Carregando...</div> : cotacoes.length === 0 ? <div className="p-8 text-center"><Calculator size={40} className="text-slate-600 mx-auto mb-3" /><p className="text-slate-400">Nenhuma proposta.</p></div> : <div className="overflow-x-auto"><table className="w-full"><tbody className="divide-y divide-slate-700/30">{cotacoes.map((cotacao) => <tr key={cotacao.id}><td className="px-6 py-4 text-white">{cotacao.numero || cotacao.id.slice(0, 8)}</td><td className="px-6 py-4"><Tag>{cotacao.tipoProduto === 'cloudfy' ? 'Cloudfy' : 'Cplug'}</Tag></td><td className="px-6 py-4 text-emerald-400">{formatarValor(cotacao.valorTotal || 0)}</td><td className="px-6 py-4 text-right"><Button variant="ghost" size="sm" onClick={() => window.open(`/cotacoes/editar/${cotacao.id}`, '_blank', 'noopener,noreferrer')}><Eye size={16} /></Button></td></tr>)}</tbody></table></div>}</Card></div>}
+      {abaAtiva === 'propostas' && <div className="space-y-4"><div className="flex items-center justify-between"><div><h3 className="text-lg font-semibold text-white">Propostas Comerciais</h3><p className="text-slate-400 text-sm">Cotações vinculadas a este lead</p></div>{podeCriarCotacao && <Button size="sm" onClick={novaCotacao}><Plus size={16} className="mr-2" />Nova Cotação</Button>}</div>{!podeCriarCotacao && <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg flex gap-3 text-amber-400 text-sm"><AlertTriangle size={18} className="shrink-0" />Cotação indisponível na fase {rotulosStatusCotacao[lead.fase]}. Avance para Contato, Proposta ou Negociação.</div>}<Card className="overflow-hidden">{carregandoCotacoes ? <div className="p-8 text-center text-slate-400">Carregando...</div> : cotacoes.length === 0 ? <div className="p-8 text-center"><Calculator size={40} className="text-slate-600 mx-auto mb-3" /><p className="text-slate-400">Nenhuma proposta.</p></div> : <div className="overflow-x-auto"><table className="w-full"><tbody className="divide-y divide-slate-700/30">{cotacoes.map((cotacao) => <tr key={cotacao.id}><td className="px-6 py-4 text-white">{cotacao.numero || cotacao.id.slice(0, 8)}</td><td className="px-6 py-4"><Tag>{cotacao.tipoProduto === 'cloudfy' ? 'Cloudfy' : 'Cplug'}</Tag></td><td className="px-6 py-4 text-emerald-400">{formatarValor(cotacao.valorTotal || 0)}</td><td className="px-6 py-4 text-right"><Button variant="ghost" size="sm" title="Imprimir cotação" onClick={() => handleAbrirPDF(cotacao)} className="text-slate-400 hover:text-white"><Printer size={16} /></Button></td></tr>)}</tbody></table></div>}</Card></div>}
     </div>
   );
 }
