@@ -24,6 +24,10 @@ export function useFunil() {
     );
   }, []);
 
+  const removerLead = useCallback((leadId: string) => {
+    setLeads((prev) => prev.filter((lead) => lead.id !== leadId));
+  }, []);
+
   const leadsPorStatus = useCallback(
     (status: Lead['statusFunil']) => leads.filter((l) => l.statusFunil === status),
     [leads]
@@ -34,6 +38,7 @@ export function useFunil() {
     loading,
     fetchLeads,
     moverLead,
+    removerLead,
     leadsPorStatus,
   };
 }

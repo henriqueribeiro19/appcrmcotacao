@@ -4,9 +4,8 @@ import { toast } from 'react-toastify';
 import { useLead } from '@/hooks/useLead';
 import { Card } from '@/components/ui/Card';
 import { Tag } from '@/components/ui/Tag';
-import { ScoreBadge } from '@/components/ScoreBadge';
 import { formatCNPJ, formatPhone, formatDate } from '@/utils/formatters';
-import { Search, ArrowRight, RotateCcw, Archive, TrendingUp, TrendingDown } from 'lucide-react';
+import { Search, ArrowRight, RotateCcw, Archive, TrendingDown, CalendarDays, Cloud, Cpu, Users } from 'lucide-react';
 
 const statusLabels: Record<string, string> = {
   fechado_ganho: 'Ganho',
@@ -17,6 +16,17 @@ const statusColors: Record<string, 'default' | 'success' | 'warning' | 'danger' 
   fechado_ganho: 'success',
   fechado_perdido: 'danger',
 };
+
+function timestampToDate(value: unknown): Date | null {
+  if (!value) return null;
+  if (typeof value === 'object' && value !== null && 'toDate' in value && typeof value.toDate === 'function') {
+    return value.toDate();
+  }
+  if (typeof value === 'object' && value !== null && 'seconds' in value && typeof value.seconds === 'number') {
+    return new Date(value.seconds * 1000);
+  }
+  return value instanceof Date ? value : null;
+}
 
 export function ArquivadosList() {
   const navigate = useNavigate();
@@ -30,9 +40,8 @@ export function ArquivadosList() {
 
   const filtered = arquivados.filter((l) => {
     const term = search.toLowerCase();
-    const matchSearch =
-      l.razaoSocial.toLowerCase().includes(term) ||
-      l.cnpj.includes(term);
+    const matchSearch = [l.razaoSocial, l.cnpj, l.segmento, l.email, l.observacoes]
+      .some((value) => value?.toLowerCase().includes(term));
     const matchStatus =
       filtroStatus === 'todos'
         ? true
@@ -44,6 +53,14 @@ export function ArquivadosList() {
 
   const ganhos = arquivados.filter((l) => l.statusFunil === 'fechado_ganho').length;
   const perdidos = arquivados.filter((l) => l.statusFunil === 'fechado_perdido').length;
+  const cloudfy = arquivados.filter((l) => l.statusFunil === 'fechado_ganho' && l.produtoContratado === 'cloudfy').length;
+  const cplug = arquivados.filter((l) => l.statusFunil === 'fechado_ganho' && l.produtoContratado === 'cplug').length;
+  const agora = new Date();
+  const novosNoMes = arquivados.filter((lead) => {
+    const data = timestampToDate(lead.dataContratacao || lead.dataArquivamento);
+    return lead.statusFunil === 'fechado_ganho' && data !== null &&
+      data.getMonth() === agora.getMonth() && data.getFullYear() === agora.getFullYear();
+  }).length;
 
   const handleDesarquivar = async (id: string) => {
     if (!confirm('Deseja reativar este lead? Ele voltará para o funil em Negociação.')) return;
@@ -60,38 +77,56 @@ export function ArquivadosList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Clientes Arquivados</h1>
-          <p className="text-slate-400 mt-1">Leads fechados (ganhos e perdidos) para análise futura</p>
+          <h1 className="text-2xl font-bold text-white">Clientes</h1>
+          <p className="text-slate-400 mt-1">Clientes convertidos e leads perdidos para análise futura</p>
         </div>
       </div>
 
       {/* Cards de resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <Card className="flex items-center gap-4">
-          <div className="p-3 rounded-lg bg-emerald-500/10 text-emerald-400">
-            <TrendingUp size={24} />
+          <div className="rounded-lg bg-emerald-500/10 p-3 text-emerald-400">
+            <Users size={24} />
           </div>
           <div>
             <p className="text-2xl font-bold text-white">{ganhos}</p>
-            <p className="text-sm text-slate-400">Clientes Ganhos</p>
+            <p className="text-sm text-slate-400">Clientes ativos</p>
           </div>
         </Card>
         <Card className="flex items-center gap-4">
-          <div className="p-3 rounded-lg bg-red-500/10 text-red-400">
+          <div className="rounded-lg bg-purple-500/10 p-3 text-purple-400">
+            <Cloud size={24} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white">{cloudfy}</p>
+            <p className="text-sm text-slate-400">Cloudfy</p>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-4">
+          <div className="rounded-lg bg-cyan-500/10 p-3 text-cyan-400">
+            <Cpu size={24} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white">{cplug}</p>
+            <p className="text-sm text-slate-400">Cplug</p>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-4">
+          <div className="rounded-lg bg-blue-500/10 p-3 text-blue-400">
+            <CalendarDays size={24} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white">{novosNoMes}</p>
+            <p className="text-sm text-slate-400">Este mês</p>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-4">
+          <div className="rounded-lg bg-red-500/10 p-3 text-red-400">
             <TrendingDown size={24} />
           </div>
           <div>
             <p className="text-2xl font-bold text-white">{perdidos}</p>
-            <p className="text-sm text-slate-400">Clientes Perdidos</p>
-          </div>
-        </Card>
-        <Card className="flex items-center gap-4">
-          <div className="p-3 rounded-lg bg-slate-800 text-slate-400">
-            <Archive size={24} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-white">{arquivados.length}</p>
-            <p className="text-sm text-slate-400">Total Arquivados</p>
+            <p className="text-sm text-slate-400">Clientes perdidos</p>
           </div>
         </Card>
       </div>
@@ -102,7 +137,7 @@ export function ArquivadosList() {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
-            placeholder="Buscar por razão social ou CNPJ..."
+            placeholder="Buscar por empresa, segmento, CNPJ ou observação..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-slate-850 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50"
@@ -143,10 +178,11 @@ export function ArquivadosList() {
               <thead>
                 <tr className="border-b border-slate-800 text-left text-xs font-medium text-slate-400 uppercase">
                   <th className="pb-3 pr-4">Empresa</th>
+                  <th className="pb-3 pr-4">Segmento</th>
                   <th className="pb-3 pr-4">Contato</th>
                   <th className="pb-3 pr-4">Resultado</th>
                   <th className="pb-3 pr-4">Arquivado em</th>
-                  <th className="pb-3 pr-4">Classificação</th>
+                  <th className="pb-3 pr-4">Observação</th>
                   <th className="pb-3 text-right">Ações</th>
                 </tr>
               </thead>
@@ -157,6 +193,7 @@ export function ArquivadosList() {
                       <p className="text-sm font-medium text-white">{lead.razaoSocial}</p>
                       <p className="text-xs text-slate-500 font-mono">{formatCNPJ(lead.cnpj)}</p>
                     </td>
+                    <td className="py-4 pr-4 text-sm text-slate-300">{lead.segmento || '—'}</td>
                     <td className="py-4 pr-4 text-sm text-slate-400">
                       {lead.telefone && <p>{formatPhone(lead.telefone)}</p>}
                       {lead.email && <p className="text-xs">{lead.email}</p>}
@@ -169,13 +206,10 @@ export function ArquivadosList() {
                     <td className="py-4 pr-4 text-sm text-slate-400">
                       {formatDate(lead.dataArquivamento)}
                     </td>
-                    <td className="py-4 pr-4">
-                      {lead.classificacao && (
-                        <ScoreBadge
-                          score={lead.classificacao === 'A' ? 85 : lead.classificacao === 'B' ? 70 : 45}
-                          classificacao={lead.classificacao}
-                        />
-                      )}
+                    <td className="py-4 pr-4 max-w-xs">
+                      <p className="text-sm text-slate-400 whitespace-pre-wrap break-words">
+                        {lead.observacoes || 'Nenhuma observação.'}
+                      </p>
                     </td>
                     <td className="py-4 text-right">
                       <div className="flex items-center justify-end gap-1">

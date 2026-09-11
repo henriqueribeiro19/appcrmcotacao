@@ -16,6 +16,7 @@ export interface User {
 export type StatusFunil = 'novo' | 'contato' | 'proposta' | 'negociacao' | 'fechado_ganho' | 'fechado_perdido';
 export type Classificacao = 'A' | 'B' | 'C';
 export type Produto = 'cloudfy' | 'cplug' | 'qualificar';
+export type ProdutoContratado = 'cloudfy' | 'cplug';
 export type CanalOrigem = 'scraping' | 'upload_xlsx' | 'indicacao' | 'site' | 'manual';
 export type RegimeTributario = 'SIMEI' | 'Simples Nacional' | 'Lucro Real' | 'Lucro Presumido' | 'Lucro Arbitrado';
 
@@ -50,6 +51,7 @@ export interface Lead {
   bairro?: string;
   statusFunil: StatusFunil;
   produtoSugerido?: Produto;
+  produtoContratado?: ProdutoContratado;
   classificacao?: Classificacao;
   canalOrigem?: CanalOrigem;
   tipoEmpresa?: 'matriz' | 'filial';
@@ -67,6 +69,7 @@ export interface Lead {
   excluidoEm: Timestamp | null;
   arquivado?: boolean;
   dataArquivamento?: Timestamp | null;
+  dataContratacao?: Timestamp | null;
   criadoEm: Timestamp;
   atualizadoEm: Timestamp;
   interacoes?: Interacao[];
