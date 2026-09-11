@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { ArrowLeft, Save, AlertTriangle, CheckSquare, Hash } from 'lucide-react';
 import { parseValorMonetario } from '../../../utils/calculos';
+import { formatarEntradaMonetaria, formatarNumeroMonetario } from '../../../utils/formatters';
 
 interface FormData { nome: string; descricao: string; valor: string; tipo: 'checkbox' | 'quantificavel'; ativo: boolean; }
 
@@ -23,7 +24,7 @@ export function LicencaCplugForm() {
   useEffect(() => {
     if (isEdicao && licencas.length > 0) {
       const licenca = licencas.find((l) => l.id === id);
-      if (licenca) setFormData({ nome: licenca.nome || licenca.descricao || '', descricao: licenca.descricao || '', valor: (licenca.valor ?? licenca.valorIntegral ?? 0).toString().replace('.', ','), tipo: licenca.tipo || 'checkbox', ativo: licenca.ativo !== false });
+      if (licenca) setFormData({ nome: licenca.nome || licenca.descricao || '', descricao: licenca.descricao || '', valor: formatarNumeroMonetario(licenca.valor ?? licenca.valorIntegral ?? 0), tipo: licenca.tipo || 'checkbox', ativo: licenca.ativo !== false });
     }
   }, [isEdicao, id, licencas]);
 
@@ -90,7 +91,7 @@ export function LicencaCplugForm() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Valor unitário (R$) <span className="text-red-400">*</span></label>
-            <Input value={formData.valor} onChange={(e) => handleChange('valor', e.target.value)} placeholder="0,00" className={erros.valor ? 'border-red-500' : ''} />
+            <Input value={formData.valor} onChange={(e) => handleChange('valor', formatarEntradaMonetaria(e.target.value))} placeholder="0,00" className={erros.valor ? 'border-red-500' : ''} />
             {erros.valor && <p className="mt-1 text-sm text-red-400">{erros.valor}</p>}
             <p className="mt-1 text-xs text-slate-500">{formData.tipo === 'quantificavel' ? 'Valor por unidade (multiplicado pela quantidade)' : 'Valor fixo quando marcado'}</p>
           </div>

@@ -17,7 +17,8 @@ import { Input } from '../../components/ui/Input';
 import { Tag } from '../../components/ui/Tag';
 import { PropostaPDF } from '../../components/pdf/PropostaPDF';
 import { leadPodeReceberCotacao, rotulosStatusCotacao } from '../../utils/cotacaoRegras';
-import { calcularResumoCotacao, gerarNumeroCotacao } from '../../utils/calculos';
+import { calcularResumoCotacao, gerarNumeroCotacao, parseValorMonetario } from '../../utils/calculos';
+import { formatarEntradaMonetaria, formatarNumeroMonetario } from '../../utils/formatters';
 import {
   ArrowLeft, Save, AlertTriangle, ChevronRight, ChevronLeft, ChevronDown,
   ArrowUp, ArrowDown, User, Cloud, Cpu, TagIcon, Percent, Package,
@@ -293,11 +294,12 @@ export function CotacaoForm() {
   };
 
   const alterarValorAdicional = (adicionalId: string, valor: string) => {
-    const valorNumerico = Number.parseFloat(valor.replace(',', '.'));
+    const valorFormatado = formatarEntradaMonetaria(valor);
+    const valorNumerico = parseValorMonetario(valorFormatado) ?? 0;
     setForm((prev) => ({
       ...prev,
       adicionais: prev.adicionais.map((a) => a.adicionalId === adicionalId
-        ? { ...a, valor: Number.isNaN(valorNumerico) ? 0 : Math.max(0, valorNumerico) }
+        ? { ...a, valor: Math.max(0, valorNumerico) }
         : a),
     }));
   };
@@ -332,7 +334,7 @@ export function CotacaoForm() {
     setForm((prev) => ({
       ...prev,
       parcelasServicos: prev.parcelasServicos.map((parcela) => parcela.numero === numero
-        ? { ...parcela, [campo]: campo === 'valor' ? Math.max(0, Number.parseFloat(valor.replace(',', '.')) || 0) : valor }
+        ? { ...parcela, [campo]: campo === 'valor' ? Math.max(0, parseValorMonetario(formatarEntradaMonetaria(valor)) ?? 0) : valor }
         : parcela),
     }));
   };
@@ -799,7 +801,7 @@ export function CotacaoForm() {
                                 id={`valor-adicional-${adicional.adicionalId}`}
                                 type="text"
                                 inputMode="decimal"
-                                value={adicional.valor.toString().replace('.', ',')}
+                                value={formatarNumeroMonetario(adicional.valor)}
                                 onChange={(e) => alterarValorAdicional(adicional.adicionalId, e.target.value)}
                                 className="w-24 rounded border border-slate-600 bg-slate-900/60 py-1 pl-7 pr-2 text-right text-xs text-amber-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400/50"
                               />
@@ -857,7 +859,7 @@ export function CotacaoForm() {
                         <span className="w-8 text-center text-sm font-medium text-slate-400">{parcela.numero}ª</span>
                         <div>
                           <label htmlFor={`valor-parcela-${parcela.numero}`} className="sr-only">Valor da parcela {parcela.numero}</label>
-                          <input id={`valor-parcela-${parcela.numero}`} type="text" inputMode="decimal" value={parcela.valor.toFixed(2).replace('.', ',')} onChange={(e) => atualizarParcela(parcela.numero, 'valor', e.target.value)} className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                          <input id={`valor-parcela-${parcela.numero}`} type="text" inputMode="decimal" value={formatarNumeroMonetario(parcela.valor)} onChange={(e) => atualizarParcela(parcela.numero, 'valor', e.target.value)} className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none" />
                         </div>
                         <div>
                           <label htmlFor={`data-parcela-${parcela.numero}`} className="sr-only">Vencimento da parcela {parcela.numero}</label>

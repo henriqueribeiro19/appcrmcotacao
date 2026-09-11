@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { ArrowLeft, Save, AlertTriangle, Puzzle, CheckSquare, Hash } from 'lucide-react';
 import { parseValorMonetario } from '../../utils/calculos';
+import { formatarEntradaMonetaria, formatarNumeroMonetario } from '../../utils/formatters';
 
 interface FormData {
   nome: string;
@@ -39,7 +40,7 @@ export function AdicionalForm() {
         setFormData({
           nome: adicional.nome,
           descricao: adicional.descricao || '',
-          valor: adicional.valor.toString().replace('.', ','),
+          valor: formatarNumeroMonetario(adicional.valor),
           tipo: adicional.tipo,
           ativo: adicional.ativo !== false,
         });
@@ -144,7 +145,7 @@ export function AdicionalForm() {
             <label className="block text-sm font-medium text-slate-300 mb-2">Valor (R$) <span className="text-red-400">*</span></label>
             <Input
               value={formData.valor}
-              onChange={(e) => handleChange('valor', e.target.value)}
+              onChange={(e) => handleChange('valor', formatarEntradaMonetaria(e.target.value))}
               placeholder="0,00"
               className={erros.valor ? 'border-red-500' : ''}
             />

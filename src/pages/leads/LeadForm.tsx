@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { InteracaoItem } from '@/components/InteracaoItem';
 import { isValidCNPJ, isValidEmail, isValidCEP, isValidPhone } from '@/utils/validators';
-import { formatCNPJ, formatCEP, formatPhone } from '@/utils/formatters';
+import { formatCNPJ, formatCEP, formatPhone, formatarEntradaMonetaria, formatarNumeroMonetario } from '@/utils/formatters';
 import { Save, ArrowLeft, User, MessageSquare, FileText, Plus } from 'lucide-react';
 import type { Lead, Interacao, RegimeTributario } from '@/types';
 
@@ -237,17 +237,16 @@ export function LeadForm() {
   };
 
   const formatarCapitalSocial = (valor?: number) => {
-    if (valor === undefined || valor === null) return '';
-    return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return formatarNumeroMonetario(valor);
   };
 
   const atualizarCapitalSocial = (valor: string) => {
-    const somenteNumeros = valor.replace(/\D/g, '');
-    if (!somenteNumeros) {
+    const formatado = formatarEntradaMonetaria(valor);
+    if (!formatado) {
       setForm({ ...form, capitalSocial: undefined });
       return;
     }
-    setForm({ ...form, capitalSocial: Number(somenteNumeros) / 100 });
+    setForm({ ...form, capitalSocial: Number(formatado.replace(/\./g, '').replace(',', '.')) });
   };
 
   const matrizesDisponiveis = leads.filter((item) =>

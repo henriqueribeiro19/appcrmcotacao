@@ -36,3 +36,12 @@ export function formatDate(timestamp: unknown): string {
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
+export function formatarEntradaMonetaria(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+  return (Number(digits) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+export function formatarNumeroMonetario(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '';
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}

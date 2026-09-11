@@ -7,6 +7,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { ArrowLeft, Save, AlertTriangle } from 'lucide-react';
 import { parseValorMonetario } from '../../../utils/calculos';
+import { formatarEntradaMonetaria, formatarNumeroMonetario } from '../../../utils/formatters';
 
 interface FormData { nome: string; categoriaId: string; valor: string; permiteMultiplasUnidades: boolean; ativo: boolean; }
 
@@ -26,7 +27,7 @@ export function LicencaCloudfyForm() {
     if (isEdicao && licencas.length > 0) {
       const licenca = licencas.find((l) => l.id === id);
       if (licenca) {
-        setFormData({ nome: licenca.nome || '', categoriaId: licenca.categoriaId || '', valor: (licenca.valor ?? licenca.valorIntegral ?? 0).toString().replace('.', ','), permiteMultiplasUnidades: licenca.permiteMultiplasUnidades === true, ativo: licenca.ativo !== false });
+        setFormData({ nome: licenca.nome || '', categoriaId: licenca.categoriaId || '', valor: formatarNumeroMonetario(licenca.valor ?? licenca.valorIntegral ?? 0), permiteMultiplasUnidades: licenca.permiteMultiplasUnidades === true, ativo: licenca.ativo !== false });
       }
     }
   }, [isEdicao, id, licencas]);
@@ -90,7 +91,7 @@ export function LicencaCloudfyForm() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Valor (R$) <span className="text-red-400">*</span></label>
-            <Input value={formData.valor} onChange={(e) => handleChange('valor', e.target.value)} placeholder="0,00" className={erros.valor ? 'border-red-500' : ''} />
+            <Input value={formData.valor} onChange={(e) => handleChange('valor', formatarEntradaMonetaria(e.target.value))} placeholder="0,00" className={erros.valor ? 'border-red-500' : ''} />
             {erros.valor && <p className="mt-1 text-sm text-red-400">{erros.valor}</p>}
           </div>
           <div>

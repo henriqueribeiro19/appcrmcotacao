@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/Input';
 import { Tag } from '../../components/ui/Tag';
 import { ArrowLeft, Save, AlertTriangle, Plus, X, Layers, CheckSquare, Hash, Package } from 'lucide-react';
 import { parseValorMonetario } from '../../utils/calculos';
+import { formatarEntradaMonetaria, formatarNumeroMonetario } from '../../utils/formatters';
 
 interface ModuloFixo { id: string; nome: string; }
 interface ModuloOpcional { id: string; nome: string; valor: number; }
@@ -32,7 +33,7 @@ export function PacoteForm() {
   useEffect(() => {
     if (isEdicao && pacotes.length > 0) {
       const pacote = pacotes.find((p) => p.id === id);
-      if (pacote) setFormData({ nome: pacote.nome, descricao: pacote.descricao || '', valorBase: pacote.valorBase.toString().replace('.', ','), ativo: pacote.ativo !== false, modulosFixos: pacote.modulosFixos || [], modulosOpcionais: pacote.modulosOpcionais || [], itensQuantificaveis: pacote.itensQuantificaveis || [] });
+      if (pacote) setFormData({ nome: pacote.nome, descricao: pacote.descricao || '', valorBase: formatarNumeroMonetario(pacote.valorBase), ativo: pacote.ativo !== false, modulosFixos: pacote.modulosFixos || [], modulosOpcionais: pacote.modulosOpcionais || [], itensQuantificaveis: pacote.itensQuantificaveis || [] });
     }
   }, [isEdicao, id, pacotes]);
 
@@ -101,7 +102,7 @@ export function PacoteForm() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Valor base (R$) <span className="text-red-400">*</span></label>
-              <Input value={formData.valorBase} onChange={(e) => handleChange('valorBase', e.target.value)} placeholder="0,00" className={erros.valorBase ? 'border-red-500' : ''} />
+              <Input value={formData.valorBase} onChange={(e) => handleChange('valorBase', formatarEntradaMonetaria(e.target.value))} placeholder="0,00" className={erros.valorBase ? 'border-red-500' : ''} />
               {erros.valorBase && <p className="mt-1 text-sm text-red-400">{erros.valorBase}</p>}
               <p className="mt-1 text-xs text-slate-500">Valor mensal base (módulos fixos já inclusos)</p>
             </div>
@@ -136,7 +137,7 @@ export function PacoteForm() {
             <h3 className="text-lg font-semibold text-white flex items-center gap-2"><CheckSquare size={20} className="text-amber-400" />Módulos Opcionais <span className="text-xs font-normal text-slate-500">(checkbox — somam ao valor)</span></h3>
             <div className="flex gap-2">
               <Input value={novoOpcionalNome} onChange={(e) => setNovoOpcionalNome(e.target.value)} placeholder="Nome..." className="flex-1" />
-              <Input value={novoOpcionalValor} onChange={(e) => setNovoOpcionalValor(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), adicionarOpcional())} placeholder="Valor R$" className="w-32" />
+              <Input value={novoOpcionalValor} onChange={(e) => setNovoOpcionalValor(formatarEntradaMonetaria(e.target.value))} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), adicionarOpcional())} placeholder="Valor R$" className="w-32" />
               <Button type="button" onClick={adicionarOpcional} variant="outline" className="flex items-center gap-1"><Plus size={16} /> Adicionar</Button>
             </div>
             <div className="space-y-2">
@@ -159,7 +160,7 @@ export function PacoteForm() {
             <h3 className="text-lg font-semibold text-white flex items-center gap-2"><Hash size={20} className="text-purple-400" />Itens Quantificáveis <span className="text-xs font-normal text-slate-500">(contador +/-)</span></h3>
             <div className="flex gap-2">
               <Input value={novoQuantNome} onChange={(e) => setNovoQuantNome(e.target.value)} placeholder="Nome..." className="flex-1" />
-              <Input value={novoQuantValor} onChange={(e) => setNovoQuantValor(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), adicionarQuantificavel())} placeholder="Valor unitário R$" className="w-40" />
+              <Input value={novoQuantValor} onChange={(e) => setNovoQuantValor(formatarEntradaMonetaria(e.target.value))} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), adicionarQuantificavel())} placeholder="Valor unitário R$" className="w-40" />
               <Button type="button" onClick={adicionarQuantificavel} variant="outline" className="flex items-center gap-1"><Plus size={16} /> Adicionar</Button>
             </div>
             <div className="space-y-2">

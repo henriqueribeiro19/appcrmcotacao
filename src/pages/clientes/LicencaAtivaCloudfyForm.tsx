@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useClienteLicencaCloudfy } from '@/hooks/useClienteLicencaCloudfy';
+import { parseValorMonetario } from '@/utils/calculos';
+import { formatarEntradaMonetaria, formatarNumeroMonetario } from '@/utils/formatters';
 
 interface ModuloFormValue {
   ativo: boolean;
@@ -175,7 +177,7 @@ export function LicencaAtivaCloudfyForm() {
       cnpj: item.cnpj || '',
       categoriaNome: item.categoriaNome || '',
       quantidade: String(item.quantidade ?? 1),
-      valorMensal: String(item.valorMensal ?? 0),
+      valorMensal: formatarNumeroMonetario(item.valorMensal ?? 0),
       dataAtivacao: item.dataAtivacao || '',
       status: item.status || 'ativa',
       observacoes: item.observacoes || '',
@@ -341,7 +343,7 @@ export function LicencaAtivaCloudfyForm() {
         licencaNome: licencasSelecionadas.join(', '),
         categoriaNome: form.categoriaNome.trim(),
         quantidade: Number(form.quantidade || 1),
-        valorMensal: Number(form.valorMensal || 0),
+        valorMensal: parseValorMonetario(form.valorMensal) ?? 0,
         dataAtivacao: form.dataAtivacao,
         status: form.status,
         observacoes: form.observacoes.trim(),
@@ -394,7 +396,7 @@ export function LicencaAtivaCloudfyForm() {
             <Input label="Responsável" value={form.responsavel} onChange={(e) => handleChange('responsavel', e.target.value)} placeholder="Nome do contato" />
             <Input label="Categoria" value={form.categoriaNome} onChange={(e) => handleChange('categoriaNome', e.target.value)} placeholder="Ex: Financeiro" />
             <Input label="Quantidade" type="number" value={form.quantidade} onChange={(e) => handleChange('quantidade', e.target.value)} min={1} />
-            <Input label="Valor mensal" type="number" value={form.valorMensal} onChange={(e) => handleChange('valorMensal', e.target.value)} min={0} step="0.01" />
+            <Input label="Valor mensal" value={form.valorMensal} onChange={(e) => handleChange('valorMensal', formatarEntradaMonetaria(e.target.value))} placeholder="0,00" />
             <Input label="Data de ativação" type="date" value={form.dataAtivacao} onChange={(e) => handleChange('dataAtivacao', e.target.value)} />
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-300">Status</label>

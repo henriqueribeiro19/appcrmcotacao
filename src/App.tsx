@@ -13,6 +13,8 @@ import { CotacoesList } from './pages/cotacoes/CotacoesList';
 import { CotacaoForm } from './pages/cotacoes/CotacaoForm';
 import { LicencasCloudfyList } from './pages/licencas/cloudfy/LicencasCloudfyList';
 import { LicencaCloudfyForm } from './pages/licencas/cloudfy/LicencaCloudfyForm';
+import { CategoriasLicencasCloudfy } from './pages/licencas/cloudfy/CategoriasLicencasCloudfy';
+import { CategoriaLicencaCloudfyForm } from './pages/licencas/cloudfy/CategoriaLicencaCloudfyForm';
 import { LicencasCplugList } from './pages/licencas/cplug/LicencasCplugList';
 import { LicencaCplugForm } from './pages/licencas/cplug/LicencaCplugForm';
 import { PacotesList } from './pages/pacotes/PacotesList';
@@ -69,6 +71,9 @@ function App() {
               <Route path="/licencas/cloudfy" element={<LicencasCloudfyList />} />
               <Route path="/licencas/cloudfy/nova" element={<LicencaCloudfyForm />} />
               <Route path="/licencas/cloudfy/editar/:id" element={<LicencaCloudfyForm />} />
+              <Route path="/licencas/cloudfy/categorias" element={<CategoriasLicencasCloudfy />} />
+              <Route path="/licencas/cloudfy/categorias/nova" element={<CategoriaLicencaCloudfyForm />} />
+              <Route path="/licencas/cloudfy/categorias/editar/:id" element={<CategoriaLicencaCloudfyForm />} />
               <Route path="/licencas/cplug" element={<LicencasCplugList />} />
               <Route path="/licencas/cplug/nova" element={<LicencaCplugForm />} />
               <Route path="/licencas/cplug/editar/:id" element={<LicencaCplugForm />} />
