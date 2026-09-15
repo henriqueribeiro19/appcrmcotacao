@@ -5,7 +5,7 @@ import { useLead } from '@/hooks/useLead';
 import { Card } from '@/components/ui/Card';
 import { Tag } from '@/components/ui/Tag';
 import { formatCNPJ, formatPhone, formatDate } from '@/utils/formatters';
-import { Search, ArrowRight, RotateCcw, Archive, TrendingDown, CalendarDays, Cloud, Cpu, Users } from 'lucide-react';
+import { Search, ArrowRight, RotateCcw, Archive, TrendingDown, CalendarDays, Cloud, Cpu, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const statusLabels: Record<string, string> = {
   fechado_ganho: 'Ganho',
@@ -32,7 +32,9 @@ export function ArquivadosList() {
   const navigate = useNavigate();
   const { arquivados, loading, fetchArquivados, desarquivarLead } = useLead();
   const [search, setSearch] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'ganho' | 'perdido'>('todos');
+  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'ganho' | 'perdido'>('ganho');
+  const [pagina, setPagina] = useState(1);
+  const registrosPorPagina = 10;
 
   useEffect(() => {
     fetchArquivados();
@@ -50,6 +52,20 @@ export function ArquivadosList() {
         : l.statusFunil === 'fechado_perdido';
     return matchSearch && matchStatus;
   });
+
+  const totalPaginas = Math.max(1, Math.ceil(filtered.length / registrosPorPagina));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const paginaLeads = filtered.slice((paginaAtual - 1) * registrosPorPagina, paginaAtual * registrosPorPagina);
+
+  const alterarBusca = (value: string) => {
+    setSearch(value);
+    setPagina(1);
+  };
+
+  const alterarFiltro = (value: 'todos' | 'ganho' | 'perdido') => {
+    setFiltroStatus(value);
+    setPagina(1);
+  };
 
   const ganhos = arquivados.filter((l) => l.statusFunil === 'fechado_ganho').length;
   const perdidos = arquivados.filter((l) => l.statusFunil === 'fechado_perdido').length;
@@ -139,7 +155,7 @@ export function ArquivadosList() {
             type="text"
             placeholder="Buscar por empresa, segmento, CNPJ ou observação..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => alterarBusca(e.target.value)}
             className="w-full bg-slate-850 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50"
           />
         </div>
@@ -147,7 +163,7 @@ export function ArquivadosList() {
           {(['todos', 'ganho', 'perdido'] as const).map((f) => (
             <button
               key={f}
-              onClick={() => setFiltroStatus(f)}
+              onClick={() => alterarFiltro(f)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filtroStatus === f
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
@@ -187,7 +203,7 @@ export function ArquivadosList() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {filtered.map((lead) => (
+                {paginaLeads.map((lead) => (
                   <tr key={lead.id} className="group hover:bg-slate-900/50 transition-colors">
                     <td className="py-4 pr-4">
                       <p className="text-sm font-medium text-white">{lead.razaoSocial}</p>
@@ -236,6 +252,35 @@ export function ArquivadosList() {
           </div>
         )}
       </Card>
+
+      {!loading && filtered.length > 0 && (
+        <div className="flex flex-col gap-3 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            Exibindo {(paginaAtual - 1) * registrosPorPagina + 1}-{Math.min(paginaAtual * registrosPorPagina, filtered.length)} de {filtered.length} clientes
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPagina((atual) => Math.max(1, atual - 1))}
+              disabled={paginaAtual === 1}
+              aria-label="Página anterior"
+              className="rounded-lg border border-slate-700 p-2 text-slate-300 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="min-w-20 text-center">Página {paginaAtual} de {totalPaginas}</span>
+            <button
+              type="button"
+              onClick={() => setPagina((atual) => Math.min(totalPaginas, atual + 1))}
+              disabled={paginaAtual === totalPaginas}
+              aria-label="Próxima página"
+              className="rounded-lg border border-slate-700 p-2 text-slate-300 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

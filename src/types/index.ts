@@ -254,6 +254,9 @@ export interface Cotacao {
   id: string;
   leadId?: string;
   vendedorId?: string;
+  vendedorNome?: string;
+  vendedorTelefone?: string;
+  vendedorEmail?: string;
   produto?: Produto;
   categoriaCanalId?: string;
   categoriaCanalNome?: string;

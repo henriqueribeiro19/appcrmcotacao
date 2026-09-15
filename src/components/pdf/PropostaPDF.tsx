@@ -10,6 +10,7 @@ import {
 import type { Cotacao, Lead, CategoriaCanal, Adicional } from '@/types';
 import logoHrp from '../../assets/logo-hrp.png';
 import logoCloudfy from '../../assets/logo-cloudfy.png';
+import { formatPhone } from '@/utils/formatters';
 
 Font.registerHyphenationCallback((word) => [word]);
 
@@ -291,9 +292,9 @@ export function PropostaPDF({ cotacao, lead, categoriaCanal: _categoriaCanal, ad
             Agradecemos desde já pela oportunidade de apresentar nossa solução e reforçamos nosso compromisso em oferecer um atendimento transparente e eficiente. Permanecemos à disposição para quaisquer esclarecimentos adicionais que se façam necessários.
           </Text>
           <Text style={styles.greetingSignature}>Atenciosamente,</Text>
-          <Text style={styles.greetingSignature}>Henrique Ribeiro</Text>
-          <Text style={styles.greetingSignature}>+55 11 98499-1905</Text>
-          <Text style={styles.greetingSignature}>henrique@hrpsolucoes.com.br</Text>
+          <Text style={styles.greetingSignature}>{cotacao.vendedorNome || 'Usuário responsável'}</Text>
+          {cotacao.vendedorTelefone && <Text style={styles.greetingSignature}>{formatPhone(cotacao.vendedorTelefone)}</Text>}
+          {cotacao.vendedorEmail && <Text style={styles.greetingSignature}>{cotacao.vendedorEmail}</Text>}
         </View>
 
         {/* Introdução */}
@@ -434,7 +435,7 @@ export function PropostaPDF({ cotacao, lead, categoriaCanal: _categoriaCanal, ad
 
         {/* Rodapé */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>HRP Soluções | henrique@hrpsolucoes.com.br | +55 11 98499-1905</Text>
+          <Text style={styles.footerText}>HRP Soluções{cotacao.vendedorEmail ? ` | ${cotacao.vendedorEmail}` : ''}{cotacao.vendedorTelefone ? ` | ${formatPhone(cotacao.vendedorTelefone)}` : ''}</Text>
           <Text style={styles.footerText}>Proposta {cotacao.numero || '—'}</Text>
         </View>
       </Page>

@@ -19,7 +19,7 @@ export const userService = {
     return snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) as unknown as User[];
   },
 
-  async criar(data: { nome: string; email: string; senha: string }) {
+  async criar(data: { nome: string; email: string; senha: string; telefone?: string }) {
     const appName = `user-registration-${Date.now()}`;
     const secondaryApp = initializeApp(firebaseConfig, appName);
     try {
@@ -29,6 +29,7 @@ export const userService = {
         uid: result.user.uid,
         nome: data.nome,
         email: data.email,
+        telefone: data.telefone || '',
         perfil: 'admin',
         ativo: true,
         createdAt: serverTimestamp(),
@@ -40,9 +41,10 @@ export const userService = {
     }
   },
 
-  async atualizar(uid: string, data: { nome: string; ativo: boolean }) {
+  async atualizar(uid: string, data: { nome: string; telefone?: string; ativo: boolean }) {
     await updateDoc(doc(db, 'users', uid), {
       nome: data.nome,
+      telefone: data.telefone || '',
       ativo: data.ativo,
       perfil: 'admin',
       updatedAt: serverTimestamp(),

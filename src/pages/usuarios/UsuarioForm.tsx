@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { userService } from '../../services/userService';
 import type { User } from '../../types';
+import { formatPhone } from '../../utils/formatters';
 
 export function UsuarioForm() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export function UsuarioForm() {
   const [usuarios, setUsuarios] = useState<User[]>([]);
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
+  const [telefone, setTelefone] = useState('');
   const [senha, setSenha] = useState('');
   const [ativo, setAtivo] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -24,7 +26,7 @@ export function UsuarioForm() {
     userService.listar().then((lista) => {
       setUsuarios(lista);
       const usuario = lista.find((item) => item.uid === id);
-      if (usuario) { setNome(usuario.nome); setEmail(usuario.email); setAtivo(usuario.ativo); }
+      if (usuario) { setNome(usuario.nome); setEmail(usuario.email); setTelefone((usuario.telefone || '').replace(/\D/g, '')); setAtivo(usuario.ativo); }
     }).catch(() => setErro('Erro ao carregar usuário.'));
   }, [id, isEdicao]);
 
@@ -33,8 +35,8 @@ export function UsuarioForm() {
     if (!nome.trim() || !email.trim() || (!isEdicao && senha.length < 6)) { setErro(isEdicao ? 'Informe o nome.' : 'Preencha nome, e-mail e uma senha com pelo menos 6 caracteres.'); return; }
     setSalvando(true);
     try {
-      if (isEdicao) await userService.atualizar(id!, { nome: nome.trim(), ativo });
-      else await userService.criar({ nome: nome.trim(), email: email.trim(), senha });
+      if (isEdicao) await userService.atualizar(id!, { nome: nome.trim(), telefone, ativo });
+      else await userService.criar({ nome: nome.trim(), email: email.trim(), telefone, senha });
       navigate('/usuarios');
     } catch (error) {
       setErro(error instanceof Error && error.message.includes('email-already-in-use') ? 'Este e-mail já está cadastrado.' : 'Erro ao salvar usuário.');
@@ -50,6 +52,7 @@ export function UsuarioForm() {
         <form onSubmit={salvar} className="space-y-5">
           <div><label className="mb-2 block text-sm font-medium text-slate-300">Nome</label><Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome completo" /></div>
           <div><label className="mb-2 block text-sm font-medium text-slate-300">E-mail</label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={isEdicao} className={isEdicao ? 'cursor-not-allowed opacity-60' : ''} placeholder="usuario@empresa.com" /></div>
+          <div><label className="mb-2 block text-sm font-medium text-slate-300">Telefone</label><Input type="tel" value={formatPhone(telefone)} onChange={(e) => setTelefone(e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="(11) 99999-9999" /></div>
           {!isEdicao && <div><label className="mb-2 block text-sm font-medium text-slate-300">Senha inicial</label><Input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Mínimo de 6 caracteres" /></div>}
           {isEdicao && <label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} />Usuário ativo</label>}
           {isEdicao && usuarioAtual && <p className="text-xs text-slate-500">Perfil: Administrador</p>}
