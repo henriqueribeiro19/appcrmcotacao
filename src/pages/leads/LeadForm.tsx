@@ -12,7 +12,7 @@ import { Select } from '@/components/ui/Select';
 import { InteracaoItem } from '@/components/InteracaoItem';
 import { isValidCNPJ, isValidEmail, isValidCEP, isValidPhone } from '@/utils/validators';
 import { formatCNPJ, formatCEP, formatPhone, formatarEntradaMonetaria, formatarNumeroMonetario } from '@/utils/formatters';
-import { Save, ArrowLeft, User, MessageSquare, FileText, Plus } from 'lucide-react';
+import { Save, ArrowLeft, User, MessageSquare, FileText, Plus, Search, LoaderCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
 import type { Lead, Interacao, RegimeTributario } from '@/types';
 
 const segmentos = [
@@ -116,6 +116,9 @@ export function LeadForm() {
   const [aba, setAba] = useState<Aba>('dados');
   const [saving, setSaving] = useState(false);
   const [formLoaded, setFormLoaded] = useState(false);
+  const [buscandoCnpj, setBuscandoCnpj] = useState(false);
+  const [erroBuscaCnpj, setErroBuscaCnpj] = useState('');
+  const [cnpjEncontrado, setCnpjEncontrado] = useState(false);
 
   const [form, setForm] = useState<Partial<Lead>>({ ...initialFormState });
 
@@ -209,6 +212,85 @@ export function LeadForm() {
       }
     } catch {
       toast.error('Erro ao buscar CEP');
+    }
+  };
+
+  const buscarCNPJ = async () => {
+    const cnpj = (form.cnpj || '').replace(/\D/g, '');
+    setErroBuscaCnpj('');
+    setCnpjEncontrado(false);
+
+    if (!isValidCNPJ(cnpj)) {
+      setErrors((prev) => ({ ...prev, cnpj: 'Informe um CNPJ válido antes de consultar.' }));
+      return;
+    }
+
+    setBuscandoCnpj(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, { signal: controller.signal });
+      if (!response.ok) {
+        if (response.status === 404) throw new Error('CNPJ não encontrado na base consultada.');
+        if (response.status === 429) throw new Error('Limite temporário de consultas atingido. Tente novamente em instantes.');
+        throw new Error('Não foi possível consultar este CNPJ agora.');
+      }
+
+      const data = await response.json() as {
+        razao_social?: string;
+        nome_fantasia?: string;
+        telefone?: string;
+        ddd_telefone_1?: string;
+        email?: string;
+        cep?: string;
+        logradouro?: string;
+        numero?: string;
+        complemento?: string;
+        bairro?: string;
+        municipio?: string;
+        uf?: string;
+        capital_social?: string | number;
+        porte?: string;
+        qsa?: Array<{ nome_socio?: string }>;
+      };
+
+      const capitalSocial = typeof data.capital_social === 'number'
+        ? data.capital_social
+        : Number(String(data.capital_social || '').replace(/\./g, '').replace(',', '.')) || undefined;
+      const telefone = (data.ddd_telefone_1 || data.telefone || '').replace(/\D/g, '');
+      const socios = (data.qsa || []).map((socio) => socio.nome_socio).filter(Boolean).join(', ');
+      const porte = data.porte?.toUpperCase();
+      const porteNormalizado: Lead['porte'] = porte?.includes('MICRO') ? 'MEI' : porte?.includes('PEQUENO') ? 'EPP' : porte ? 'DEMAIS' : undefined;
+      const valorSeVazio = <T,>(atual: T | undefined, novo: T | undefined) => atual || novo || atual;
+
+      setForm((prev) => ({
+        ...prev,
+        razaoSocial: valorSeVazio(prev.razaoSocial, data.razao_social),
+        nomeFantasia: valorSeVazio(prev.nomeFantasia, data.nome_fantasia),
+        telefone: valorSeVazio(prev.telefone, telefone),
+        email: valorSeVazio(prev.email, data.email),
+        cep: valorSeVazio(prev.cep, data.cep?.replace(/\D/g, '')),
+        logradouro: valorSeVazio(prev.logradouro, data.logradouro),
+        numero: valorSeVazio(prev.numero, data.numero),
+        complemento: valorSeVazio(prev.complemento, data.complemento),
+        bairro: valorSeVazio(prev.bairro, data.bairro),
+        municipio: valorSeVazio(prev.municipio, data.municipio),
+        uf: valorSeVazio(prev.uf, data.uf),
+        capitalSocial: prev.capitalSocial || capitalSocial,
+        porte: prev.porte || porteNormalizado,
+        socios: valorSeVazio(prev.socios, socios),
+      }));
+
+      const duplicado = leads.some((lead) => lead.id !== id && lead.cnpj.replace(/\D/g, '') === cnpj);
+      setCnpjEncontrado(true);
+      if (duplicado) setErroBuscaCnpj('Atenção: já existe um lead cadastrado com este CNPJ.');
+      else toast.success('Dados do CNPJ carregados. Revise as informações antes de salvar.');
+    } catch (error) {
+      setErroBuscaCnpj(error instanceof DOMException && error.name === 'AbortError' ? 'A consulta demorou demais. Tente novamente.' : error instanceof Error ? error.message : 'Erro ao consultar CNPJ.');
+    } finally {
+      window.clearTimeout(timeout);
+      setBuscandoCnpj(false);
     }
   };
 
@@ -444,10 +526,31 @@ export function LeadForm() {
                   <Input
                     label="CNPJ *"
                     value={form.cnpj ? formatCNPJ(form.cnpj) : ''}
-                    onChange={(e) => setForm({ ...form, cnpj: e.target.value.replace(/\D/g, '') })}
+                    onChange={(e) => {
+                      setForm({ ...form, cnpj: e.target.value.replace(/\D/g, '').slice(0, 14) });
+                      setErrors((prev) => {
+                        const { cnpj: _cnpjError, ...remaining } = prev;
+                        return remaining;
+                      });
+                      setErroBuscaCnpj('');
+                      setCnpjEncontrado(false);
+                    }}
                     error={errors.cnpj}
                     placeholder="00.000.000/0000-00"
                   />
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={buscarCNPJ}
+                      disabled={buscandoCnpj || !isValidCNPJ(form.cnpj || '')}
+                      className="w-full gap-2"
+                      title="Consultar dados públicos do CNPJ"
+                    >
+                      {buscandoCnpj ? <LoaderCircle size={16} className="animate-spin" /> : <Search size={16} />}
+                      {buscandoCnpj ? 'Consultando...' : 'Buscar CNPJ'}
+                    </Button>
+                  </div>
                   <Input
                     label="Inscrição Estadual"
                     value={form.inscricaoEstadual || ''}
@@ -461,6 +564,17 @@ export function LeadForm() {
                     options={regimesTributarios}
                   />
                 </div>
+                {erroBuscaCnpj && (
+                  <div className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${cnpjEncontrado ? 'border-amber-500/30 bg-amber-500/10 text-amber-300' : 'border-red-500/30 bg-red-500/10 text-red-300'}`}>
+                    <AlertCircle size={17} className="mt-0.5 shrink-0" />
+                    <span>{erroBuscaCnpj}</span>
+                  </div>
+                )}
+                {cnpjEncontrado && !erroBuscaCnpj && (
+                  <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">
+                    <CheckCircle2 size={17} /> Dados encontrados. Confira os campos antes de salvar.
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <Input
