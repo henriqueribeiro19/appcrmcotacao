@@ -9,7 +9,6 @@ import {
   deleteField,
   query,
   where,
-  orderBy,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -46,13 +45,23 @@ export const stagingService = {
     const q = query(
       collection(db, STAGING_COLLECTION),
       ...constraints,
-      orderBy('criadoEm', 'desc')
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
+    const data = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     })) as Staging[];
+
+    return data.sort((a, b) => {
+      const aTime = a.criadoEm && typeof a.criadoEm === 'object' && 'seconds' in a.criadoEm
+        ? a.criadoEm.seconds
+        : 0;
+      const bTime = b.criadoEm && typeof b.criadoEm === 'object' && 'seconds' in b.criadoEm
+        ? b.criadoEm.seconds
+        : 0;
+
+      return status === 'pendente' ? aTime - bTime : bTime - aTime;
+    });
   },
 
   async getById(id: string) {

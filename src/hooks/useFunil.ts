@@ -3,6 +3,22 @@ import { funilService } from '@/services/funilService';
 import { leadService } from '@/services/leadService';
 import type { Lead } from '@/types';
 
+function timestampParaMillis(valor: unknown): number {
+  if (valor && typeof valor === 'object' && 'toMillis' in valor && typeof valor.toMillis === 'function') {
+    return valor.toMillis();
+  }
+  if (valor instanceof Date) {
+    return valor.getTime();
+  }
+  if (typeof valor === 'number') {
+    return valor;
+  }
+  if (typeof valor === 'string') {
+    return new Date(valor).getTime();
+  }
+  return 0;
+}
+
 export function useFunil() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,7 +45,11 @@ export function useFunil() {
   }, []);
 
   const leadsPorStatus = useCallback(
-    (status: Lead['statusFunil']) => leads.filter((l) => l.statusFunil === status),
+    (status: Lead['statusFunil']) => leads
+      .filter((lead) => lead.statusFunil === status)
+      .sort((a, b) => {
+        return timestampParaMillis(b.atualizadoEm) - timestampParaMillis(a.atualizadoEm);
+      }),
     [leads]
   );
 

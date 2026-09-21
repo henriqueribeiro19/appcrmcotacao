@@ -54,9 +54,12 @@ const statusFunilOptions = [
   { value: 'contato', label: 'Contato' },
   { value: 'proposta', label: 'Proposta' },
   { value: 'negociacao', label: 'Negociação' },
-  { value: 'fechado_ganho', label: 'Fechado (Ganho)' },
-  { value: 'fechado_perdido', label: 'Fechado (Perdido)' },
 ];
+
+const statusFunilFinalizados = {
+  fechado_ganho: 'Fechado (Ganho)',
+  fechado_perdido: 'Fechado (Perdido)',
+} as const;
 
 const tipoInteracaoOptions = [
   { value: 'anotacao', label: 'Anotação' },
@@ -296,11 +299,18 @@ export function LeadForm() {
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
+    const cnpjLimpo = (form.cnpj || '').replace(/\D/g, '');
+
     if (!form.razaoSocial || form.razaoSocial.length < 3) {
       newErrors.razaoSocial = 'Razão social é obrigatória (mín. 3 caracteres)';
     }
     if (!form.cnpj || !isValidCNPJ(form.cnpj)) {
       newErrors.cnpj = 'CNPJ inválido';
+    } else {
+      const erroDuplicidade = verificarDuplicidadeCNPJ(form.cnpj || '', id);
+      if (erroDuplicidade) {
+        newErrors.cnpj = erroDuplicidade;
+      }
     }
     if (form.email && !isValidEmail(form.email)) {
       newErrors.email = 'Email inválido';
@@ -311,11 +321,46 @@ export function LeadForm() {
     if (form.telefone && !isValidPhone(form.telefone)) {
       newErrors.telefone = 'Telefone inválido';
     }
-    if (form.tipoEmpresa === 'filial' && !form.matrizCnpj) {
-      newErrors.matrizCnpj = 'Selecione a matriz associada';
+    if (form.tipoEmpresa === 'filial') {
+      if (!form.matrizCnpj) {
+        newErrors.matrizCnpj = 'Selecione a matriz associada';
+      } else {
+        const matrizLimpa = (form.matrizCnpj || '').replace(/\D/g, '');
+        if (matrizLimpa === cnpjLimpo) {
+          newErrors.matrizCnpj = 'A filial não pode ter o mesmo CNPJ da matriz.';
+        } else {
+          const matrizExiste = leads.some((lead) => {
+            if (lead.id === id) return false;
+            if (lead.status === 'inativo') return false;
+            if (lead.tipoEmpresa === 'filial') return false;
+            return (lead.cnpj || '').replace(/\D/g, '') === matrizLimpa;
+          });
+
+          if (!matrizExiste) {
+            newErrors.matrizCnpj = 'A matriz associada não foi encontrada entre os leads ativos.';
+          }
+        }
+      }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const verificarDuplicidadeCNPJ = (cnpj: string, currentId?: string) => {
+    const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
+    if (!cnpjLimpo || !isValidCNPJ(cnpjLimpo)) return '';
+
+    const duplicado = leads.find((lead) => {
+      if (lead.id === currentId) return false;
+      if (lead.status === 'inativo') return false;
+      return (lead.cnpj || '').replace(/\D/g, '') === cnpjLimpo;
+    });
+
+    if (!duplicado) return '';
+
+    return duplicado.tipoEmpresa === 'filial'
+      ? 'Já existe uma filial ativa cadastrada com este CNPJ.'
+      : 'Já existe um lead ativo com este CNPJ.';
   };
 
   const formatarCapitalSocial = (valor?: number) => {
@@ -342,7 +387,8 @@ export function LeadForm() {
     setSaving(true);
     try {
       if (id) {
-        await updateLead(id, form);
+        const { arquivado, dataArquivamento, ...dadosEditaveis } = form;
+        await updateLead(id, dadosEditaveis);
         toast.success('Lead atualizado com sucesso!');
       } else {
         const newId = await createLead(form as Omit<Lead, 'id' | 'criadoEm' | 'atualizadoEm'>);
@@ -673,12 +719,26 @@ export function LeadForm() {
             <Card>
               <h3 className="text-lg font-semibold text-white mb-4">Funil e Classificação</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Select
-                  label="Status do Funil"
-                  value={form.statusFunil || 'novo'}
-                  onChange={(e) => setForm({ ...form, statusFunil: e.target.value as Lead['statusFunil'] })}
-                  options={statusFunilOptions}
-                />
+                {form.statusFunil && form.statusFunil in statusFunilFinalizados ? (
+                  <div className="w-full">
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                      Status do Funil
+                    </label>
+                    <div className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-400">
+                      {statusFunilFinalizados[form.statusFunil as keyof typeof statusFunilFinalizados]}
+                    </div>
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      Este status é definido pelo Funil de Vendas.
+                    </p>
+                  </div>
+                ) : (
+                  <Select
+                    label="Status do Funil"
+                    value={form.statusFunil || 'novo'}
+                    onChange={(e) => setForm({ ...form, statusFunil: e.target.value as Lead['statusFunil'] })}
+                    options={statusFunilOptions}
+                  />
+                )}
                 <Select
                   label="Produto Sugerido"
                   value={form.produtoSugerido || 'qualificar'}
@@ -748,16 +808,10 @@ export function LeadForm() {
                 <h3 className="text-lg font-semibold text-white mb-4">Status do Registro</h3>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="arquivado"
-                      checked={form.arquivado || false}
-                      onChange={(e) => setForm({ ...form, arquivado: e.target.checked })}
-                      className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500/20"
-                    />
-                    <label htmlFor="arquivado" className="text-sm text-slate-300">
-                      Arquivado (não aparece no funil)
-                    </label>
+                    <span className={`inline-block w-2.5 h-2.5 rounded-full ${form.arquivado ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                    <span className="text-sm text-slate-300">
+                      {form.arquivado ? 'Arquivado (não aparece no funil)' : 'Ativo (aparece no funil)'}
+                    </span>
                   </div>
                   {form.dataArquivamento && (
                     <span className="text-xs text-slate-500">

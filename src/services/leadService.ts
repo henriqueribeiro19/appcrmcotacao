@@ -20,7 +20,29 @@ function limparUndefined<T extends Record<string, unknown>>(obj: T): T {
   return Object.fromEntries(entries) as T;
 }
 
+function normalizarCNPJ(cnpj?: string) {
+  return (cnpj || '').replace(/\D/g, '');
+}
+
 export const leadService = {
+  async validarCnpjUnico(cnpj: string, currentId?: string) {
+    const cnpjLimpo = normalizarCNPJ(cnpj);
+    if (!cnpjLimpo || cnpjLimpo.length !== 14) return;
+
+    const q = query(
+      collection(db, LEADS_COLLECTION),
+      where('cnpj', '==', cnpjLimpo),
+      where('status', '==', 'ativo'),
+    );
+
+    const snapshot = await getDocs(q);
+    const duplicado = snapshot.docs.some((item) => item.id !== currentId);
+
+    if (duplicado) {
+      throw new Error('Já existe um lead ativo com este CNPJ.');
+    }
+  },
+
   async getAll(constraints: QueryConstraint[] = []) {
     const q = query(collection(db, LEADS_COLLECTION), ...constraints);
     const snapshot = await getDocs(q);
@@ -40,6 +62,8 @@ export const leadService = {
   },
 
   async create(data: Omit<Lead, 'id' | 'criadoEm' | 'atualizadoEm'>) {
+    await this.validarCnpjUnico(data.cnpj, undefined);
+
     const docRef = await addDoc(collection(db, LEADS_COLLECTION), {
       ...limparUndefined(data as unknown as Record<string, unknown>),
       interacoes: [],
@@ -52,9 +76,18 @@ export const leadService = {
   },
 
   async update(id: string, data: Partial<Lead>) {
+    if (data.cnpj) {
+      await this.validarCnpjUnico(data.cnpj, id);
+    }
+
     const docRef = doc(db, LEADS_COLLECTION, id);
+    const statusFinalizado = data.statusFunil === 'fechado_ganho' || data.statusFunil === 'fechado_perdido';
+    const { arquivado, dataArquivamento, ...dadosEditaveis } = data;
     await updateDoc(docRef, {
-      ...limparUndefined(data as unknown as Record<string, unknown>),
+      ...limparUndefined({
+        ...dadosEditaveis,
+        ...(statusFinalizado ? { arquivado, dataArquivamento } : {}),
+      } as unknown as Record<string, unknown>),
       atualizadoEm: serverTimestamp(),
     });
   },

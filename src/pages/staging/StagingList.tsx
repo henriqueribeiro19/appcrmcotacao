@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useLead } from '@/hooks/useLead';
 import { stagingService } from '@/services/stagingService';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -25,28 +26,68 @@ const statusConfig = {
   descartado: { label: 'Descartado', color: 'text-red-400' as const },
 };
 
+const PAGE_SIZE = 50;
+
 export function StagingList() {
   const navigate = useNavigate();
+  const { leads, fetchLeads } = useLead();
   const [items, setItems] = useState<Staging[]>([]);
+  const [totaisPorStatus, setTotaisPorStatus] = useState({ pendente: 0, aprovado: 0, descartado: 0 });
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('pendente');
+  const [statusFilter, setStatusFilter] = useState<'pendente' | 'aprovado' | 'descartado'>('pendente');
   const [showImport, setShowImport] = useState(false);
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    fetchLeads();
+  }, [fetchLeads]);
+
+  const carregarTotaisPorStatus = async () => {
+    try {
+      const [pendentes, aprovados, descartados] = await Promise.all([
+        stagingService.getAll('pendente'),
+        stagingService.getAll('aprovado'),
+        stagingService.getAll('descartado'),
+      ]);
+
+      setTotaisPorStatus({
+        pendente: pendentes.length,
+        aprovado: aprovados.length,
+        descartado: descartados.length,
+      });
+    } catch {
+      setTotaisPorStatus({ pendente: 0, aprovado: 0, descartado: 0 });
+    }
+  };
 
   const fetchStaging = async () => {
+    const currentRequestId = ++requestIdRef.current;
     setLoading(true);
+    setItems([]);
+
     try {
       const data = await stagingService.getAll(statusFilter || undefined);
+      if (currentRequestId !== requestIdRef.current) return;
       setItems(data);
+      setPaginaAtual(1);
     } catch (err) {
+      if (currentRequestId !== requestIdRef.current) return;
       toast.error('Erro ao carregar triagem');
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     fetchStaging();
+    carregarTotaisPorStatus();
   }, [statusFilter]);
+
+  const totalPaginas = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const itensPagina = items.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE);
 
   const handleImport = async (data: Record<string, unknown>[]) => {
     const stagingItems = data.map((row) => ({
@@ -72,11 +113,40 @@ export function StagingList() {
       capitalSocial: typeof row.capitalSocial === 'number' ? row.capitalSocial : undefined,
     }));
 
+    const jaExistemNaBase = new Set<string>();
+    const repetidosNoArquivo = new Set<string>();
+
+    for (const item of stagingItems) {
+      if (!item.cnpj || item.cnpj.length !== 14) continue;
+
+      const cnpjJaBase = leads.some((lead) => {
+        if (lead.status === 'inativo') return false;
+        return (lead.cnpj || '').replace(/\D/g, '') === item.cnpj;
+      });
+
+      if (cnpjJaBase) {
+        jaExistemNaBase.add(item.cnpj);
+        continue;
+      }
+
+      const ocorrencias = stagingItems.filter((registro) => registro.cnpj === item.cnpj).length;
+      if (ocorrencias > 1) {
+        repetidosNoArquivo.add(item.cnpj);
+      }
+    }
+
+    const todosDuplicados = [...new Set([...jaExistemNaBase, ...repetidosNoArquivo])];
+    if (todosDuplicados.length > 0) {
+      const lista = todosDuplicados.slice(0, 5).map((cnpj) => formatCNPJ(cnpj)).join(', ');
+      toast.error(`Não foi possível importar. CNPJ(s) duplicados encontrados: ${lista}${todosDuplicados.length > 5 ? '...' : ''}`);
+      return;
+    }
+
     try {
       await stagingService.createMany(stagingItems);
       toast.success(`${stagingItems.length} leads importados para triagem!`);
       setStatusFilter('pendente');
-      fetchStaging();
+      await Promise.all([fetchStaging(), carregarTotaisPorStatus()]);
     } catch {
       toast.error('Erro ao importar para triagem');
     }
@@ -121,6 +191,7 @@ export function StagingList() {
       };
       const leadId = await stagingService.approve(item.id, leadData);
       toast.success('Lead aprovado e criado!');
+      await Promise.all([fetchStaging(), carregarTotaisPorStatus()]);
       navigate(`/leads/${leadId}`);
     } catch {
       toast.error('Erro ao aprovar lead');
@@ -133,7 +204,7 @@ export function StagingList() {
     try {
       await stagingService.reject(item.id, motivo);
       toast.success('Lead descartado');
-      fetchStaging();
+      await Promise.all([fetchStaging(), carregarTotaisPorStatus()]);
     } catch {
       toast.error('Erro ao descartar lead');
     }
@@ -144,7 +215,7 @@ export function StagingList() {
     try {
       await stagingService.delete(id);
       toast.success('Registro excluído');
-      fetchStaging();
+      await Promise.all([fetchStaging(), carregarTotaisPorStatus()]);
     } catch {
       toast.error('Erro ao excluir');
     }
@@ -155,7 +226,7 @@ export function StagingList() {
     try {
       await stagingService.reactivate(id);
       toast.success('Lead reativado e movido para pendentes');
-      fetchStaging();
+      await Promise.all([fetchStaging(), carregarTotaisPorStatus()]);
     } catch {
       toast.error('Erro ao reativar lead');
     }
@@ -186,11 +257,9 @@ export function StagingList() {
             }`}
           >
             {statusConfig[status].label}
-            {status === 'pendente' && (
-              <span className="ml-2 bg-slate-800 text-slate-300 text-xs px-1.5 py-0.5 rounded-full">
-                {items.filter((i) => i.status === 'pendente').length}
-              </span>
-            )}
+            <span className="ml-2 bg-slate-800 text-slate-300 text-xs px-1.5 py-0.5 rounded-full">
+              {totaisPorStatus[status] ?? 0}
+            </span>
           </button>
         ))}
       </div>
@@ -208,6 +277,10 @@ export function StagingList() {
           </div>
         ) : (
           <div className="overflow-x-auto">
+            <div className="flex items-center justify-between pb-3 text-xs text-slate-400">
+              <span>Página {paginaAtual} de {totalPaginas}</span>
+              <span>{items.length} registros no filtro atual</span>
+            </div>
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-800 text-left text-xs font-medium text-slate-400 uppercase">
@@ -222,7 +295,7 @@ export function StagingList() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {items.map((item) => (
+                {itensPagina.map((item) => (
                   <tr key={item.id} className="group hover:bg-slate-900/50 transition-colors">
                     <td className="py-4 pr-4">
                       <div>
@@ -322,6 +395,32 @@ export function StagingList() {
                 ))}
               </tbody>
             </table>
+
+            {totalPaginas > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-800 text-sm text-slate-300">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPaginaAtual((prev) => Math.max(1, prev - 1))}
+                  disabled={paginaAtual === 1}
+                >
+                  Anterior
+                </Button>
+
+                <span>
+                  Página {paginaAtual} / {totalPaginas}
+                </span>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPaginaAtual((prev) => Math.min(totalPaginas, prev + 1))}
+                  disabled={paginaAtual === totalPaginas}
+                >
+                  Próxima
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </Card>
