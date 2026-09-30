@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useLead } from '@/hooks/useLead';
@@ -17,6 +17,7 @@ import {
   ArrowRight,
   AlertTriangle,
   RotateCcw,
+  Search,
 } from 'lucide-react';
 import type { Staging, Lead, RegimeTributario } from '@/types';
 
@@ -35,6 +36,8 @@ export function StagingList() {
   const [totaisPorStatus, setTotaisPorStatus] = useState({ pendente: 0, aprovado: 0, descartado: 0 });
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'pendente' | 'aprovado' | 'descartado'>('pendente');
+  const [search, setSearch] = useState('');
+  const [segmentoFilter, setSegmentoFilter] = useState('todos');
   const [showImport, setShowImport] = useState(false);
   const [paginaAtual, setPaginaAtual] = useState(1);
   const requestIdRef = useRef(0);
@@ -61,13 +64,13 @@ export function StagingList() {
     }
   };
 
-  const fetchStaging = async () => {
+  const fetchStaging = async (nextStatus: 'pendente' | 'aprovado' | 'descartado' | string = statusFilter) => {
     const currentRequestId = ++requestIdRef.current;
     setLoading(true);
     setItems([]);
 
     try {
-      const data = await stagingService.getAll(statusFilter || undefined);
+      const data = await stagingService.getAll(nextStatus || undefined);
       if (currentRequestId !== requestIdRef.current) return;
       setItems(data);
       setPaginaAtual(1);
@@ -82,12 +85,59 @@ export function StagingList() {
   };
 
   useEffect(() => {
-    fetchStaging();
+    fetchStaging(statusFilter);
     carregarTotaisPorStatus();
   }, [statusFilter]);
 
-  const totalPaginas = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-  const itensPagina = items.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE);
+  const segmentos = useMemo(() => {
+    const opcoes = new Set(items.map((item) => item.segmento?.trim()).filter((segmento): segmento is string => Boolean(segmento)));
+    if (segmentoFilter !== 'todos') opcoes.add(segmentoFilter);
+    return [...opcoes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [items, segmentoFilter]);
+
+  const itensFiltrados = useMemo(() => {
+    const termo = search
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('pt-BR')
+      .trim();
+
+    return items.filter((item) => {
+      const correspondeSegmento = segmentoFilter === 'todos' || item.segmento?.trim() === segmentoFilter;
+      if (!correspondeSegmento) return false;
+      if (!termo) return true;
+
+      const valoresPesquisaveis = [
+        item.nome,
+        item.nomeFantasia,
+        item.cnpj,
+        item.cnpj ? formatCNPJ(item.cnpj) : '',
+        item.telefone,
+        item.telefone ? formatPhone(item.telefone) : '',
+        item.email,
+        item.municipio,
+        item.bairro,
+        item.segmento,
+        item.score,
+        item.classificacao,
+        item.produtoSugerido,
+        statusConfig[item.status]?.label,
+        item.motivoDescarte,
+      ];
+      const textoNormalizado = valoresPesquisaveis
+        .filter((valor) => valor !== undefined && valor !== null)
+        .join(' ')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase('pt-BR');
+      const numerosPesquisaveis = `${item.cnpj || ''}${item.telefone || ''}`.replace(/\D/g, '');
+
+      return textoNormalizado.includes(termo) || (/^[\d.\-/()\s]+$/.test(search) && numerosPesquisaveis.includes(search.replace(/\D/g, '')));
+    });
+  }, [items, search, segmentoFilter]);
+
+  const totalPaginas = Math.max(1, Math.ceil(itensFiltrados.length / PAGE_SIZE));
+  const itensPagina = itensFiltrados.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE);
 
   const handleImport = async (data: Record<string, unknown>[]) => {
     const stagingItems = data.map((row) => ({
@@ -138,17 +188,16 @@ export function StagingList() {
     const todosDuplicados = [...new Set([...jaExistemNaBase, ...repetidosNoArquivo])];
     if (todosDuplicados.length > 0) {
       const lista = todosDuplicados.slice(0, 5).map((cnpj) => formatCNPJ(cnpj)).join(', ');
-      toast.error(`Não foi possível importar. CNPJ(s) duplicados encontrados: ${lista}${todosDuplicados.length > 5 ? '...' : ''}`);
-      return;
+      throw new Error(`Importação bloqueada: ${todosDuplicados.length} CNPJ(s) já existem ou estão repetidos no arquivo: ${lista}${todosDuplicados.length > 5 ? '...' : ''}`);
     }
 
     try {
       await stagingService.createMany(stagingItems);
-      toast.success(`${stagingItems.length} leads importados para triagem!`);
       setStatusFilter('pendente');
-      await Promise.all([fetchStaging(), carregarTotaisPorStatus()]);
-    } catch {
-      toast.error('Erro ao importar para triagem');
+      await Promise.all([fetchStaging('pendente'), carregarTotaisPorStatus()]);
+      toast.success(`${stagingItems.length} leads importados para triagem!`);
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -264,6 +313,39 @@ export function StagingList() {
         ))}
       </div>
 
+      <Card className="p-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="relative sm:col-span-2">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="search"
+              aria-label="Pesquisar leads da triagem"
+              placeholder="Buscar por empresa, CNPJ, contato, localização..."
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPaginaAtual(1);
+              }}
+              className="w-full rounded-lg border border-slate-800 bg-slate-850 py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+            />
+          </div>
+          <select
+            aria-label="Filtrar por segmento"
+            value={segmentoFilter}
+            onChange={(event) => {
+              setSegmentoFilter(event.target.value);
+              setPaginaAtual(1);
+            }}
+            className="rounded-lg border border-slate-800 bg-slate-850 px-3 py-2.5 text-sm text-white focus:border-emerald-500/50 focus:outline-none"
+          >
+            <option value="todos">Segmento</option>
+            {segmentos.map((segmento) => (
+              <option key={segmento} value={segmento}>{segmento}</option>
+            ))}
+          </select>
+        </div>
+      </Card>
+
       <Card>
         {loading ? (
           <div className="text-center py-12">
@@ -275,11 +357,15 @@ export function StagingList() {
             <p>Nenhum lead na triagem</p>
             <p className="text-sm mt-1">Importe uma planilha para começar</p>
           </div>
+        ) : itensFiltrados.length === 0 ? (
+          <div className="text-center py-12 text-slate-500">
+            <p>Nenhum registro encontrado com esses filtros</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <div className="flex items-center justify-between pb-3 text-xs text-slate-400">
               <span>Página {paginaAtual} de {totalPaginas}</span>
-              <span>{items.length} registros no filtro atual</span>
+              <span>{itensFiltrados.length} registros no filtro atual</span>
             </div>
             <table className="w-full">
               <thead>

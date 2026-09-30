@@ -9,7 +9,7 @@ import { isValidCNPJ, isValidEmail, isValidPhone } from '@/utils/validators';
 interface ImportPlanilhaProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (data: Record<string, unknown>[]) => void;
+  onImport: (data: Record<string, unknown>[]) => Promise<void>;
 }
 
 type Etapa = 'upload' | 'mapeamento' | 'revisao';
@@ -90,6 +90,7 @@ export function ImportPlanilha({ isOpen, onClose, onImport }: ImportPlanilhaProp
   const [todosDados, setTodosDados] = useState<Record<string, unknown>[]>([]);
   const [mapeamento, setMapeamento] = useState<Record<string, string>>({});
   const [importando, setImportando] = useState(false);
+  const [erroImportacao, setErroImportacao] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,7 +246,8 @@ export function ImportPlanilha({ isOpen, onClose, onImport }: ImportPlanilhaProp
     setEtapa('revisao');
   };
 
-  const handleImportar = () => {
+  const handleImportar = async () => {
+    setErroImportacao('');
     const validos = registrosRevisao.filter(r => r.valido);
     if (validos.length === 0) {
       toast.error('Nenhum registro válido para importar');
@@ -285,11 +287,13 @@ export function ImportPlanilha({ isOpen, onClose, onImport }: ImportPlanilhaProp
         };
       });
 
-      onImport(dadosParaImportar);
+      await onImport(dadosParaImportar);
       toast.success(`${validos.length} de ${registrosRevisao.length} registros importados!`);
       handleClose();
-    } catch {
-      toast.error('Erro ao importar planilha');
+    } catch (error) {
+      const mensagem = error instanceof Error ? error.message : 'Erro ao importar planilha';
+      setErroImportacao(mensagem);
+      toast.error(mensagem);
     } finally {
       setImportando(false);
     }
@@ -302,6 +306,7 @@ export function ImportPlanilha({ isOpen, onClose, onImport }: ImportPlanilhaProp
     setTodosDados([]);
     setMapeamento({});
     setImportando(false);
+    setErroImportacao('');
     onClose();
   };
 
@@ -533,12 +538,19 @@ export function ImportPlanilha({ isOpen, onClose, onImport }: ImportPlanilhaProp
             </div>
           )}
 
+          {erroImportacao && (
+            <div className="text-sm text-red-300 bg-red-500/10 rounded-lg border border-red-500/30 p-3">
+              <p className="font-medium">A importação não foi concluída.</p>
+              <p className="mt-1 break-words">{erroImportacao}</p>
+            </div>
+          )}
+
           <div className="flex justify-between items-center pt-2">
             <Button variant="ghost" onClick={() => setEtapa('mapeamento')}>
               <ChevronLeft size={16} className="mr-1" /> Voltar
             </Button>
             <Button
-              onClick={handleImportar}
+              onClick={() => void handleImportar()}
               isLoading={importando}
               disabled={validosCount === 0}
             >

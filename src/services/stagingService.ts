@@ -7,6 +7,7 @@ import {
   updateDoc,
   deleteDoc,
   deleteField,
+  writeBatch,
   query,
   where,
   serverTimestamp,
@@ -37,6 +38,12 @@ function getClassificacao(score: number): Classificacao {
   if (score >= 80) return 'A';
   if (score >= 60) return 'B';
   return 'C';
+}
+
+function removerCamposIndefinidos<T extends Record<string, unknown>>(data: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined),
+  ) as Partial<T>;
 }
 
 export const stagingService = {
@@ -88,10 +95,27 @@ export const stagingService = {
 
   async createMany(items: Omit<Staging, 'id' | 'score' | 'classificacao' | 'produtoSugerido' | 'criadoEm' | 'status'>[]) {
     const createdIds: string[] = [];
-    for (const item of items) {
-      const id = await this.create(item);
-      createdIds.push(id);
+    for (let start = 0; start < items.length; start += 500) {
+      const batch = writeBatch(db);
+      const batchItems = items.slice(start, start + 500);
+
+      for (const item of batchItems) {
+        const docRef = doc(collection(db, STAGING_COLLECTION));
+        const score = calcularScore(item);
+        batch.set(docRef, {
+          ...removerCamposIndefinidos(item),
+          score,
+          classificacao: getClassificacao(score),
+          produtoSugerido: 'qualificar',
+          status: 'pendente',
+          criadoEm: serverTimestamp(),
+        });
+        createdIds.push(docRef.id);
+      }
+
+      await batch.commit();
     }
+
     return createdIds;
   },
 
