@@ -1,6 +1,6 @@
 import type { StatusFunil } from '@/types';
 
-export const statusElegiveisParaCotacao: StatusFunil[] = ['contato', 'proposta', 'negociacao'];
+export const statusElegiveisParaCotacao: StatusFunil[] = ['proposta', 'negociacao'];
 
 export function leadPodeReceberCotacao(status?: StatusFunil): boolean {
   return status ? statusElegiveisParaCotacao.includes(status) : false;

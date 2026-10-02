@@ -14,7 +14,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated() && (isAdmin() || isOwner(userId));
       allow create: if isAdmin();
-      allow update: if isAdmin();
+      allow update: if isAdmin() || (
+        isOwner(userId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimoAcessoApp']) &&
+        request.resource.data.ultimoAcessoApp == request.time
+      );
       allow delete: if isAdmin();
     }
     match /leads/{leadId} {

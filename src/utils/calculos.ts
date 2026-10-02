@@ -23,8 +23,11 @@ export function calcularResumoCotacao(
     .filter((i) => i.selecionado)
     .reduce((sum, i) => sum + i.valorUnitario * i.quantidade, 0);
 
-  // Desconto aplica apenas sobre licenças (não sobre serviços)
-  const descontoValor = subtotalLicencas * (descontoPercentual / 100);
+  // Itens antigos sem a flag continuam participando do desconto.
+  const subtotalElegivelDesconto = itens
+    .filter((i) => i.selecionado && i.aplicaDescontoGlobal !== false)
+    .reduce((sum, i) => sum + i.valorUnitario * i.quantidade, 0);
+  const descontoValor = subtotalElegivelDesconto * (descontoPercentual / 100);
   const totalMensalidade = subtotalLicencas - descontoValor;
 
   // Serviços (adicionais) - não sofrem desconto

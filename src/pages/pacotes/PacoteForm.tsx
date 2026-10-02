@@ -10,8 +10,8 @@ import { parseValorMonetario } from '../../utils/calculos';
 import { formatarEntradaMonetaria, formatarNumeroMonetario } from '../../utils/formatters';
 
 interface ModuloFixo { id: string; nome: string; }
-interface ModuloOpcional { id: string; nome: string; valor: number; }
-interface ItemQuantificavel { id: string; nome: string; valorUnitario: number; }
+interface ModuloOpcional { id: string; nome: string; valor: number; aplicaDescontoGlobal?: boolean; }
+interface ItemQuantificavel { id: string; nome: string; valorUnitario: number; aplicaDescontoGlobal?: boolean; }
 interface FormData { nome: string; descricao: string; valorBase: string; ativo: boolean; modulosFixos: ModuloFixo[]; modulosOpcionais: ModuloOpcional[]; itensQuantificaveis: ItemQuantificavel[]; }
 
 export function PacoteForm() {
@@ -33,7 +33,7 @@ export function PacoteForm() {
   useEffect(() => {
     if (isEdicao && pacotes.length > 0) {
       const pacote = pacotes.find((p) => p.id === id);
-      if (pacote) setFormData({ nome: pacote.nome, descricao: pacote.descricao || '', valorBase: formatarNumeroMonetario(pacote.valorBase), ativo: pacote.ativo !== false, modulosFixos: pacote.modulosFixos || [], modulosOpcionais: pacote.modulosOpcionais || [], itensQuantificaveis: pacote.itensQuantificaveis || [] });
+      if (pacote) setFormData({ nome: pacote.nome, descricao: pacote.descricao || '', valorBase: formatarNumeroMonetario(pacote.valorBase), ativo: pacote.ativo !== false, modulosFixos: pacote.modulosFixos || [], modulosOpcionais: (pacote.modulosOpcionais || []).map((item) => ({ ...item, aplicaDescontoGlobal: item.aplicaDescontoGlobal !== false })), itensQuantificaveis: (pacote.itensQuantificaveis || []).map((item) => ({ ...item, aplicaDescontoGlobal: item.aplicaDescontoGlobal !== false })) });
     }
   }, [isEdicao, id, pacotes]);
 
@@ -66,10 +66,10 @@ export function PacoteForm() {
   const adicionarFixo = () => { if (!novoFixo.trim()) return; setFormData((prev) => ({ ...prev, modulosFixos: [...prev.modulosFixos, { id: crypto.randomUUID(), nome: novoFixo.trim() }] })); setNovoFixo(''); };
   const removerFixo = (idRemover: string) => setFormData((prev) => ({ ...prev, modulosFixos: prev.modulosFixos.filter((m) => m.id !== idRemover) }));
 
-  const adicionarOpcional = () => { if (!novoOpcionalNome.trim() || !novoOpcionalValor.trim()) return; const valor = parseValorMonetario(novoOpcionalValor); if (valor === null || valor < 0) return; setFormData((prev) => ({ ...prev, modulosOpcionais: [...prev.modulosOpcionais, { id: crypto.randomUUID(), nome: novoOpcionalNome.trim(), valor }] })); setNovoOpcionalNome(''); setNovoOpcionalValor(''); };
+  const adicionarOpcional = () => { if (!novoOpcionalNome.trim() || !novoOpcionalValor.trim()) return; const valor = parseValorMonetario(novoOpcionalValor); if (valor === null || valor < 0) return; setFormData((prev) => ({ ...prev, modulosOpcionais: [...prev.modulosOpcionais, { id: crypto.randomUUID(), nome: novoOpcionalNome.trim(), valor, aplicaDescontoGlobal: true }] })); setNovoOpcionalNome(''); setNovoOpcionalValor(''); };
   const removerOpcional = (idRemover: string) => setFormData((prev) => ({ ...prev, modulosOpcionais: prev.modulosOpcionais.filter((m) => m.id !== idRemover) }));
 
-  const adicionarQuantificavel = () => { if (!novoQuantNome.trim() || !novoQuantValor.trim()) return; const valor = parseValorMonetario(novoQuantValor); if (valor === null || valor < 0) return; setFormData((prev) => ({ ...prev, itensQuantificaveis: [...prev.itensQuantificaveis, { id: crypto.randomUUID(), nome: novoQuantNome.trim(), valorUnitario: valor }] })); setNovoQuantNome(''); setNovoQuantValor(''); };
+  const adicionarQuantificavel = () => { if (!novoQuantNome.trim() || !novoQuantValor.trim()) return; const valor = parseValorMonetario(novoQuantValor); if (valor === null || valor < 0) return; setFormData((prev) => ({ ...prev, itensQuantificaveis: [...prev.itensQuantificaveis, { id: crypto.randomUUID(), nome: novoQuantNome.trim(), valorUnitario: valor, aplicaDescontoGlobal: true }] })); setNovoQuantNome(''); setNovoQuantValor(''); };
   const removerQuantificavel = (idRemover: string) => setFormData((prev) => ({ ...prev, itensQuantificaveis: prev.itensQuantificaveis.filter((m) => m.id !== idRemover) }));
 
   const formatarValor = (valor: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
@@ -146,6 +146,10 @@ export function PacoteForm() {
                 <div key={modulo.id} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <span className="text-white text-sm">{modulo.nome}</span>
                   <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 text-xs text-slate-400">
+                      <input type="checkbox" checked={modulo.aplicaDescontoGlobal !== false} onChange={(e) => setFormData((prev) => ({ ...prev, modulosOpcionais: prev.modulosOpcionais.map((item) => item.id === modulo.id ? { ...item, aplicaDescontoGlobal: e.target.checked } : item) }))} className="h-4 w-4 accent-emerald-500" />
+                      Aplicar desconto
+                    </label>
                     <span className="text-emerald-400 text-sm font-medium">+ {formatarValor(modulo.valor)}</span>
                     <button type="button" onClick={() => removerOpcional(modulo.id)} className="p-1 text-slate-500 hover:text-red-400"><X size={14} /></button>
                   </div>
@@ -169,6 +173,10 @@ export function PacoteForm() {
                 <div key={item.id} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <span className="text-white text-sm">{item.nome}</span>
                   <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 text-xs text-slate-400">
+                      <input type="checkbox" checked={item.aplicaDescontoGlobal !== false} onChange={(e) => setFormData((prev) => ({ ...prev, itensQuantificaveis: prev.itensQuantificaveis.map((quantificavel) => quantificavel.id === item.id ? { ...quantificavel, aplicaDescontoGlobal: e.target.checked } : quantificavel) }))} className="h-4 w-4 accent-emerald-500" />
+                      Aplicar desconto
+                    </label>
                     <span className="text-purple-400 text-sm font-medium">{formatarValor(item.valorUnitario)} / unidade</span>
                     <button type="button" onClick={() => removerQuantificavel(item.id)} className="p-1 text-slate-500 hover:text-red-400"><X size={14} /></button>
                   </div>

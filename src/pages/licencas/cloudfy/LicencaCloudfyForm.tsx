@@ -9,7 +9,7 @@ import { ArrowLeft, Save, AlertTriangle } from 'lucide-react';
 import { parseValorMonetario } from '../../../utils/calculos';
 import { formatarEntradaMonetaria, formatarNumeroMonetario } from '../../../utils/formatters';
 
-interface FormData { nome: string; categoriaId: string; valor: string; permiteMultiplasUnidades: boolean; ativo: boolean; }
+interface FormData { nome: string; categoriaId: string; valor: string; permiteMultiplasUnidades: boolean; aplicaDescontoGlobal: boolean; ativo: boolean; }
 
 export function LicencaCloudfyForm() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export function LicencaCloudfyForm() {
   const { licencas, loading: loadingLicencas, criar, atualizar } = useLicencaCloudfy();
   const { categorias, loading: loadingCategorias } = useCategoriaLicencaCloudfy();
 
-  const [formData, setFormData] = useState<FormData>({ nome: '', categoriaId: '', valor: '', permiteMultiplasUnidades: false, ativo: true });
+  const [formData, setFormData] = useState<FormData>({ nome: '', categoriaId: '', valor: '', permiteMultiplasUnidades: false, aplicaDescontoGlobal: true, ativo: true });
   const [erros, setErros] = useState<Partial<Record<keyof FormData, string>>>({});
   const [salvando, setSalvando] = useState(false);
   const [erroGeral, setErroGeral] = useState<string | null>(null);
@@ -27,7 +27,7 @@ export function LicencaCloudfyForm() {
     if (isEdicao && licencas.length > 0) {
       const licenca = licencas.find((l) => l.id === id);
       if (licenca) {
-        setFormData({ nome: licenca.nome || '', categoriaId: licenca.categoriaId || '', valor: formatarNumeroMonetario(licenca.valor ?? licenca.valorIntegral ?? 0), permiteMultiplasUnidades: licenca.permiteMultiplasUnidades === true, ativo: licenca.ativo !== false });
+        setFormData({ nome: licenca.nome || '', categoriaId: licenca.categoriaId || '', valor: formatarNumeroMonetario(licenca.valor ?? licenca.valorIntegral ?? 0), permiteMultiplasUnidades: licenca.permiteMultiplasUnidades === true, aplicaDescontoGlobal: licenca.aplicaDescontoGlobal !== false, ativo: licenca.ativo !== false });
       }
     }
   }, [isEdicao, id, licencas]);
@@ -48,7 +48,7 @@ export function LicencaCloudfyForm() {
     setSalvando(true);
     try {
       const categoria = categorias.find((item) => item.id === formData.categoriaId);
-      const payload = { nome: formData.nome.trim(), categoriaId: formData.categoriaId, categoriaNome: categoria?.nome || '', valor: parseValorMonetario(formData.valor)!, permiteMultiplasUnidades: formData.permiteMultiplasUnidades, ativo: formData.ativo };
+      const payload = { nome: formData.nome.trim(), categoriaId: formData.categoriaId, categoriaNome: categoria?.nome || '', valor: parseValorMonetario(formData.valor)!, permiteMultiplasUnidades: formData.permiteMultiplasUnidades, aplicaDescontoGlobal: formData.aplicaDescontoGlobal, ativo: formData.ativo };
       if (isEdicao) await atualizar(id!, payload); else await criar(payload);
       navigate('/licencas/cloudfy');
     } catch (err) { setErroGeral('Erro ao salvar licença.'); console.error(err); }
@@ -104,6 +104,10 @@ export function LicencaCloudfyForm() {
           <label className="flex items-center gap-3 text-sm text-slate-300 cursor-pointer">
             <input type="checkbox" checked={formData.permiteMultiplasUnidades} onChange={(e) => handleChange('permiteMultiplasUnidades', e.target.checked)} className="h-4 w-4 accent-emerald-500" />
             Permitir múltiplas unidades na cotação
+          </label>
+          <label className="flex items-center gap-3 text-sm text-slate-300 cursor-pointer">
+            <input type="checkbox" checked={formData.aplicaDescontoGlobal} onChange={(e) => handleChange('aplicaDescontoGlobal', e.target.checked)} className="h-4 w-4 accent-emerald-500" />
+            Aplicar desconto global nesta licença
           </label>
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/50">
             <Button type="button" variant="outline" onClick={() => navigate('/licencas/cloudfy')}>Cancelar</Button>

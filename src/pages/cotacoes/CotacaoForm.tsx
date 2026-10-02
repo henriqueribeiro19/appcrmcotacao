@@ -33,6 +33,7 @@ interface Step5Item {
   valorUnitario: number;
   selecionado: boolean;
   quantidade: number;
+  aplicaDescontoGlobal: boolean;
 }
 
 interface Step5Adicional {
@@ -90,8 +91,6 @@ export function CotacaoForm() {
   const { leads, fetchLeads } = useLead();
   const { adicionais: adicionaisDisponiveis, fetchAdicionais } = useAdicional();
   const { userProfile } = useAuth();
-  const leadsElegiveis = leads.filter((lead) => leadPodeReceberCotacao(lead.statusFunil));
-
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>({
     leadId: '',
@@ -104,6 +103,9 @@ export function CotacaoForm() {
     adicionais: [],
     parcelasServicos: [],
   });
+  const leadsElegiveis = leads.filter((lead) =>
+    leadPodeReceberCotacao(lead.statusFunil) || (isEdicao && lead.id === form.leadId)
+  );
   const [erros, setErros] = useState<Partial<Record<keyof FormState, string>>>({});
   const [salvando, setSalvando] = useState(false);
   const [erroGeral, setErroGeral] = useState<string | null>(null);
@@ -137,6 +139,7 @@ export function CotacaoForm() {
             valorUnitario: Number(i.valorUnitario) || 0,
             selecionado: i.selecionado === true,
             quantidade: Math.max(1, Number(i.quantidade) || 1),
+            aplicaDescontoGlobal: i.aplicaDescontoGlobal !== false,
           })),
           adicionais: (cotacao.adicionais || []).map((a) => ({
             adicionalId: a.adicionalId,
@@ -169,8 +172,8 @@ export function CotacaoForm() {
   const validarStep = (s: number): boolean => {
     const novosErros: Partial<Record<keyof FormState, string>> = {};
     if (s === 1 && !form.leadId) novosErros.leadId = 'Selecione um lead';
-    if (s === 1 && form.leadId && !leadPodeReceberCotacao(leadSelecionado?.statusFunil)) {
-      novosErros.leadId = 'Este lead só poderá receber cotação nas fases Contato, Proposta ou Negociação';
+    if (s === 1 && form.leadId && !isEdicao && !leadPodeReceberCotacao(leadSelecionado?.statusFunil)) {
+      novosErros.leadId = 'Este lead só poderá receber cotação nas fases Proposta ou Negociação';
     }
     if (s === 2 && !form.tipoProduto) novosErros.tipoProduto = 'Selecione o tipo';
     if (s === 2 && form.tipoProduto === 'cplug' && !form.pacoteCplugId) {
@@ -214,6 +217,7 @@ export function CotacaoForm() {
           valorUnitario: l.valor ?? l.valorIntegral ?? 0,
           selecionado: false,
           quantidade: 1,
+          aplicaDescontoGlobal: l.aplicaDescontoGlobal !== false,
         })),
       }));
     } else if (form.tipoProduto === 'cplug' && form.pacoteCplugId) {
@@ -221,10 +225,10 @@ export function CotacaoForm() {
       if (!pacote) return;
       const itens: Step5Item[] = [];
       (pacote.modulosOpcionais || []).forEach((m) => {
-        itens.push({ licencaId: m.id, nome: m.nome, tipo: 'checkbox', valorUnitario: m.valor, selecionado: false, quantidade: 1 });
+        itens.push({ licencaId: m.id, nome: m.nome, tipo: 'checkbox', valorUnitario: m.valor, selecionado: false, quantidade: 1, aplicaDescontoGlobal: m.aplicaDescontoGlobal !== false });
       });
       (pacote.itensQuantificaveis || []).forEach((m) => {
-        itens.push({ licencaId: m.id, nome: m.nome, tipo: 'quantificavel', valorUnitario: m.valorUnitario, selecionado: false, quantidade: 1 });
+        itens.push({ licencaId: m.id, nome: m.nome, tipo: 'quantificavel', valorUnitario: m.valorUnitario, selecionado: false, quantidade: 1, aplicaDescontoGlobal: m.aplicaDescontoGlobal !== false });
       });
       const avulsas = licencasCplug.filter((l) => l.ativo !== false);
       avulsas.forEach((l) => {
@@ -235,6 +239,7 @@ export function CotacaoForm() {
           valorUnitario: l.valor ?? l.valorIntegral ?? 0,
           selecionado: false,
           quantidade: 1,
+          aplicaDescontoGlobal: l.aplicaDescontoGlobal !== false,
         });
       });
       setForm((prev) => ({ ...prev, itens }));
@@ -391,8 +396,8 @@ export function CotacaoForm() {
     setErroGeral(null);
     setSalvando(true);
     try {
-      if (!leadPodeReceberCotacao(leadSelecionado?.statusFunil)) {
-        setErroGeral('O lead precisa estar nas fases Contato, Proposta ou Negociação para receber uma cotação.');
+      if (!leadSelecionado || (!isEdicao && !leadPodeReceberCotacao(leadSelecionado.statusFunil))) {
+        setErroGeral('O lead precisa estar nas fases Proposta ou Negociação para receber uma nova cotação.');
         return;
       }
       if (form.parcelasServicos.length > 0) {
@@ -431,6 +436,7 @@ export function CotacaoForm() {
           valorUnitario: i.valorUnitario,
           quantidade: i.quantidade,
           selecionado: i.selecionado,
+          aplicaDescontoGlobal: i.aplicaDescontoGlobal,
         })),
         adicionais: form.adicionais.map((a) => ({
           adicionalId: a.adicionalId,

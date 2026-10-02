@@ -3,7 +3,7 @@ import {
   signOut,
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
 import type { User } from '@/types';
 
@@ -15,6 +15,10 @@ export const authService = {
 
   async logout() {
     await signOut(auth);
+  },
+
+  async registrarAcesso(uid: string) {
+    await updateDoc(doc(db, 'users', uid), { ultimoAcessoApp: serverTimestamp() });
   },
 
   async register(email: string, password: string, data: { nome: string; perfil: User['perfil'] }) {

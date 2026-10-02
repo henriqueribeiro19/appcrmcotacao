@@ -235,7 +235,10 @@ export function PropostaPDF({ cotacao, lead, categoriaCanal: _categoriaCanal, ad
   const adicionaisSelecionados = cotacao.adicionais?.filter((a) => a.selecionado) || [];
 
   const subtotalLicencas = itensSelecionados.reduce((sum, i) => sum + i.valorUnitario * i.quantidade, 0);
-  const descontoValor = subtotalLicencas * ((cotacao.descontoPercentual || 0) / 100);
+  const subtotalElegivelDesconto = itensSelecionados
+    .filter((item) => item.aplicaDescontoGlobal !== false)
+    .reduce((sum, item) => sum + item.valorUnitario * item.quantidade, 0);
+  const descontoValor = subtotalElegivelDesconto * ((cotacao.descontoPercentual || 0) / 100);
   const totalMensalidade = subtotalLicencas - descontoValor;
   const totalServicos = adicionaisSelecionados.reduce((sum, a) => sum + a.valor * a.quantidade, 0);
 
@@ -357,8 +360,8 @@ export function PropostaPDF({ cotacao, lead, categoriaCanal: _categoriaCanal, ad
                     <Text style={[styles.tableCell, { flex: 1 }]}>{item.quantidade}</Text>
                     <Text style={[styles.tableCell, { flex: 3 }]}>{item.nome}</Text>
                     <Text style={[styles.tableCellRight, { flex: 2 }]}>{formatCurrency(item.valorUnitario)}</Text>
-                    <Text style={[styles.tableCellRight, { flex: 1 }]}>{cotacao.descontoPercentual ? `${cotacao.descontoPercentual}%` : '-'}</Text>
-                    <Text style={[styles.tableCellRight, { flex: 2 }]}>{formatCurrency(item.valorUnitario * item.quantidade * (1 - (cotacao.descontoPercentual || 0) / 100))}</Text>
+                    <Text style={[styles.tableCellRight, { flex: 1 }]}>{cotacao.descontoPercentual && item.aplicaDescontoGlobal !== false ? `${cotacao.descontoPercentual}%` : '-'}</Text>
+                    <Text style={[styles.tableCellRight, { flex: 2 }]}>{formatCurrency(item.valorUnitario * item.quantidade * (1 - (cotacao.descontoPercentual && item.aplicaDescontoGlobal !== false ? cotacao.descontoPercentual : 0) / 100))}</Text>
                   </View>
                 ))}
                 {cotacao.descontoPercentual && cotacao.descontoPercentual > 0 && (

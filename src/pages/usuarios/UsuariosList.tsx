@@ -35,6 +35,11 @@ export function UsuariosList() {
               <div>
                 <p className="font-semibold text-white">{usuario.nome}</p>
                 <p className="text-sm text-slate-400">{usuario.email}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Último acesso: {usuario.ultimoAcessoApp
+                    ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(usuario.ultimoAcessoApp.toDate())
+                    : 'Nunca acessou'}
+                </p>
                 <span className={`mt-2 inline-block text-xs ${usuario.ativo ? 'text-emerald-400' : 'text-red-400'}`}>{usuario.ativo ? 'Ativo' : 'Inativo'} · Administrador</span>
               </div>
               <Button variant="ghost" size="sm" onClick={() => navigate(`/usuarios/editar/${usuario.uid}`)} className="text-slate-400 hover:text-white"><Edit size={16} /></Button>

@@ -30,6 +30,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const profile = await authService.getUserProfile(firebaseUser.uid);
           setUserProfile(profile);
+          if (profile) {
+            try {
+              await authService.registrarAcesso(firebaseUser.uid);
+            } catch (error) {
+              console.error('Não foi possível registrar o último acesso.', error);
+            }
+          }
         } catch {
           setUserProfile(null);
         }

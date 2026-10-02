@@ -8,7 +8,7 @@ import { ArrowLeft, Save, AlertTriangle, CheckSquare, Hash } from 'lucide-react'
 import { parseValorMonetario } from '../../../utils/calculos';
 import { formatarEntradaMonetaria, formatarNumeroMonetario } from '../../../utils/formatters';
 
-interface FormData { nome: string; descricao: string; valor: string; tipo: 'checkbox' | 'quantificavel'; ativo: boolean; }
+interface FormData { nome: string; descricao: string; valor: string; tipo: 'checkbox' | 'quantificavel'; aplicaDescontoGlobal: boolean; ativo: boolean; }
 
 export function LicencaCplugForm() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export function LicencaCplugForm() {
   const isEdicao = !!id;
   const { licencas, loading: loadingLicencas, criar, atualizar } = useLicencaCplug();
 
-  const [formData, setFormData] = useState<FormData>({ nome: '', descricao: '', valor: '', tipo: 'checkbox', ativo: true });
+  const [formData, setFormData] = useState<FormData>({ nome: '', descricao: '', valor: '', tipo: 'checkbox', aplicaDescontoGlobal: true, ativo: true });
   const [erros, setErros] = useState<Partial<Record<keyof FormData, string>>>({});
   const [salvando, setSalvando] = useState(false);
   const [erroGeral, setErroGeral] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export function LicencaCplugForm() {
   useEffect(() => {
     if (isEdicao && licencas.length > 0) {
       const licenca = licencas.find((l) => l.id === id);
-      if (licenca) setFormData({ nome: licenca.nome || licenca.descricao || '', descricao: licenca.descricao || '', valor: formatarNumeroMonetario(licenca.valor ?? licenca.valorIntegral ?? 0), tipo: licenca.tipo || 'checkbox', ativo: licenca.ativo !== false });
+      if (licenca) setFormData({ nome: licenca.nome || licenca.descricao || '', descricao: licenca.descricao || '', valor: formatarNumeroMonetario(licenca.valor ?? licenca.valorIntegral ?? 0), tipo: licenca.tipo || 'checkbox', aplicaDescontoGlobal: licenca.aplicaDescontoGlobal !== false, ativo: licenca.ativo !== false });
     }
   }, [isEdicao, id, licencas]);
 
@@ -42,7 +42,7 @@ export function LicencaCplugForm() {
     if (!validar()) return;
     setSalvando(true);
     try {
-      const payload = { nome: formData.nome.trim(), descricao: formData.descricao.trim() || undefined, valor: parseValorMonetario(formData.valor)!, tipo: formData.tipo, ativo: formData.ativo };
+      const payload = { nome: formData.nome.trim(), descricao: formData.descricao.trim() || undefined, valor: parseValorMonetario(formData.valor)!, tipo: formData.tipo, aplicaDescontoGlobal: formData.aplicaDescontoGlobal, ativo: formData.ativo };
       if (isEdicao) await atualizar(id!, payload); else await criar(payload);
       navigate('/licencas/cplug');
     } catch (err) { setErroGeral('Erro ao salvar licença.'); console.error(err); }
@@ -95,6 +95,10 @@ export function LicencaCplugForm() {
             {erros.valor && <p className="mt-1 text-sm text-red-400">{erros.valor}</p>}
             <p className="mt-1 text-xs text-slate-500">{formData.tipo === 'quantificavel' ? 'Valor por unidade (multiplicado pela quantidade)' : 'Valor fixo quando marcado'}</p>
           </div>
+          <label className="flex items-center gap-3 text-sm text-slate-300 cursor-pointer">
+            <input type="checkbox" checked={formData.aplicaDescontoGlobal} onChange={(e) => handleChange('aplicaDescontoGlobal', e.target.checked)} className="h-4 w-4 accent-emerald-500" />
+            Aplicar desconto global nesta licença
+          </label>
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-3">Status</label>
             <div className="flex items-center gap-3">

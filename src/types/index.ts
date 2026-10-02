@@ -11,6 +11,7 @@ export interface User {
   telefone?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  ultimoAcessoApp?: Timestamp;
 }
 
 export type StatusFunil = 'novo' | 'contato' | 'proposta' | 'negociacao' | 'fechado_ganho' | 'fechado_perdido';
@@ -136,6 +137,7 @@ export interface LicencaCloudfy {
   nome?: string;
   valor?: number;
   valorIntegral?: number;
+  aplicaDescontoGlobal?: boolean;
   ativo: boolean;
   categoriaId?: string;
   categoriaNome?: string;
@@ -195,8 +197,8 @@ export interface LicencaCplug extends LicencaCloudfy {
 }
 
 export interface ModuloFixo { id: string; nome: string; }
-export interface ModuloOpcional { id: string; nome: string; valor: number; }
-export interface ItemQuantificavel { id: string; nome: string; valorUnitario: number; }
+export interface ModuloOpcional { id: string; nome: string; valor: number; aplicaDescontoGlobal?: boolean; }
+export interface ItemQuantificavel { id: string; nome: string; valorUnitario: number; aplicaDescontoGlobal?: boolean; }
 
 export interface PacoteCplug {
   id: string;
@@ -230,6 +232,7 @@ export interface CotacaoItemCplug {
   valorUnitario: number;
   quantidade: number;
   selecionado: boolean;
+  aplicaDescontoGlobal?: boolean;
 }
 
 export interface CotacaoAdicional {
