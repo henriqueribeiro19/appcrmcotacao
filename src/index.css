@@ -36,3 +36,219 @@
   background: #1e293b !important;
   border: 1px solid #334155 !important;
 }
+
+.contract-editor-shell {
+  color: #0f172a;
+}
+
+.contract-print-area {
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #111827;
+}
+
+.contract-brand-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20mm 20mm 0;
+}
+
+.contract-hrp-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #111827;
+  font-family: Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.contract-hrp-brand img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.contract-cloudfy-logo {
+  width: 130px;
+  height: 55px;
+  object-fit: contain;
+}
+
+.contract-document .ProseMirror {
+  min-height: 70vh;
+  padding: 22mm 20mm;
+  color: #111827;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  outline: none;
+}
+
+.contract-document-editing .ProseMirror {
+  cursor: text;
+}
+
+.contract-document .ProseMirror > * + * {
+  margin-top: 0.75em;
+}
+
+.contract-document .ProseMirror h1 {
+  margin: 0 0 1.5em;
+  font-size: 16pt;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.contract-document .ProseMirror h2 {
+  margin-top: 1.4em;
+  font-size: 12pt;
+  font-weight: 700;
+  break-after: avoid-page;
+}
+
+.contract-document .ProseMirror p {
+  text-align: justify;
+}
+
+.contract-document .ProseMirror ul,
+.contract-document .ProseMirror ol {
+  padding-left: 1.5em;
+}
+
+.contract-document .ProseMirror table,
+.contract-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: Arial, sans-serif;
+  font-size: 9pt;
+}
+
+.contract-document .ProseMirror th,
+.contract-document .ProseMirror td,
+.contract-data-table th,
+.contract-data-table td {
+  border: 1px solid #94a3b8;
+  padding: 6px;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.contract-document .ProseMirror th,
+.contract-data-table thead th,
+.contract-data-table tfoot th {
+  background: #e2e8f0;
+  font-weight: 700;
+  text-align: left;
+}
+
+.contract-data-table th:first-child,
+.contract-data-table td:first-child {
+  width: 8%;
+  text-align: center;
+}
+
+.contract-data-table th:nth-child(2),
+.contract-data-table td:nth-child(2) {
+  width: 37%;
+}
+
+.contract-data-table th:nth-child(3),
+.contract-data-table td:nth-child(3) {
+  width: 19%;
+  text-align: right;
+}
+
+.contract-data-table th:nth-child(4),
+.contract-data-table td:nth-child(4) {
+  text-align: right;
+}
+
+.contract-data-table th:last-child,
+.contract-data-table td:last-child {
+  width: 20%;
+  text-align: right;
+}
+
+.contract-data-table thead {
+  display: table-header-group;
+}
+
+.contract-data-table tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.contract-table-block {
+  margin: 1em 0;
+}
+
+.contract-table-note,
+.contract-installments {
+  margin-top: 0.5em;
+  font-family: Arial, sans-serif;
+  font-size: 9pt;
+}
+
+.contract-installments ul {
+  margin: 0.3em 0;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm 17mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #111827 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .contract-print-area,
+  .contract-print-area * {
+    visibility: visible !important;
+  }
+
+  .contract-print-area {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .contract-print-area .contract-document .ProseMirror {
+    width: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    font-size: 10.5pt;
+  }
+
+  .contract-print-area .contract-brand-header {
+    padding: 0 0 10mm;
+  }
+
+  .contract-print-area .contract-document p {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .contract-print-area .no-print {
+    display: none !important;
+  }
+}

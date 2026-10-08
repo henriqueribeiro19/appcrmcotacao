@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { AppLayout } from './components/layout/AppLayout';
@@ -29,6 +30,13 @@ import { LicencaAtivaCloudfyForm } from './pages/clientes/LicencaAtivaCloudfyFor
 import { UsuariosList } from './pages/usuarios/UsuariosList';
 import { UsuarioForm } from './pages/usuarios/UsuarioForm';
 import { RelatoriosDashboard } from './pages/relatorios/RelatoriosDashboard';
+
+const ContractEditor = lazy(() => import('./pages/cotacoes/ContractEditor').then((module) => ({ default: module.ContractEditor })));
+const ContractTemplateEditor = lazy(() => import('./pages/cotacoes/ContractTemplateEditor').then((module) => ({ default: module.ContractTemplateEditor })));
+
+function ContractPageLoading() {
+  return <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-b-2 border-emerald-500" /></div>;
+}
 
 const PlaceholderPage = ({ title, subtitle }: { title: string; subtitle: string }) => (
   <div className="space-y-2">
@@ -68,6 +76,7 @@ function App() {
               <Route path="/cotacoes" element={<CotacoesList />} />
               <Route path="/cotacoes/nova" element={<CotacaoForm />} />
               <Route path="/cotacoes/editar/:id" element={<CotacaoForm />} />
+              <Route path="/cotacoes/:cotacaoId/contrato" element={<Suspense fallback={<ContractPageLoading />}><ContractEditor /></Suspense>} />
               <Route path="/licencas/cloudfy" element={<LicencasCloudfyList />} />
               <Route path="/licencas/cloudfy/nova" element={<LicencaCloudfyForm />} />
               <Route path="/licencas/cloudfy/editar/:id" element={<LicencaCloudfyForm />} />
@@ -87,6 +96,7 @@ function App() {
               <Route path="/adicionais/novo" element={<AdicionalForm />} />
               <Route path="/adicionais/editar/:id" element={<AdicionalForm />} />
               <Route element={<ProtectedRoute adminOnly />}>
+                <Route path="/contratos/modelo/cloudfy" element={<Suspense fallback={<ContractPageLoading />}><ContractTemplateEditor /></Suspense>} />
                 <Route path="/usuarios" element={<UsuariosList />} />
                 <Route path="/usuarios/novo" element={<UsuarioForm />} />
                 <Route path="/usuarios/editar/:id" element={<UsuarioForm />} />

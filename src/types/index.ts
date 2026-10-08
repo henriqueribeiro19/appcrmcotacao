@@ -289,6 +289,50 @@ export interface Cotacao {
   updatedAt?: any;
 }
 
+export interface ContractTableRow {
+  description: string;
+  quantity: number;
+  unitValue: number;
+  discountPercent?: number;
+  total: number;
+}
+
+export interface ContractTableSnapshot {
+  licenses: ContractTableRow[];
+  services: ContractTableRow[];
+  totalMonthly: number;
+  totalServices: number;
+  discountPercent: number;
+  discountAmount: number;
+  installments: CotacaoParcelaServico[];
+}
+
+export interface ContractTemplate {
+  id: string;
+  html: string;
+  version: number;
+  needsSave?: boolean;
+  updatedAt?: unknown;
+  updatedBy?: string;
+}
+
+export interface ContractDocument {
+  id: string;
+  cotacaoId: string;
+  leadId: string;
+  vendedorId?: string;
+  clienteNome: string;
+  numeroCotacao: string;
+  version: number;
+  templateVersion: number;
+  html: string;
+  tables: ContractTableSnapshot;
+  sourceFingerprint: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+  updatedBy?: string;
+}
+
 export interface Adicional {
   id: string;
   nome: string;

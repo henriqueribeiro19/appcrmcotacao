@@ -16,6 +16,7 @@ const menuItems = [
   { path: '/categorias', label: 'Categorias', icon: FolderOpen },
   { path: '/usuarios', label: 'Usuários', icon: UserCog, adminOnly: true },
   { path: '/relatorios', label: 'Relatórios', icon: BarChart3, adminOnly: true },
+  { path: '/contratos/modelo/cloudfy', label: 'Modelo contrato Cloudfy', icon: FileText, adminOnly: true },
 ];
 
 interface SidebarProps {

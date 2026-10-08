@@ -10,6 +10,45 @@ export function formatCEP(cep: string): string {
   return cleaned.replace(/^(\d{5})(\d{3})$/, '$1-$2');
 }
 
+const ieMasks: Record<string, Record<number, string>> = {
+  AC: { 13: '##.###.###/###-##' },
+  AL: { 9: '#########' },
+  AP: { 9: '##.###.###-#' },
+  AM: { 9: '##.###.###-#' },
+  BA: { 8: '######-##', 9: '#######-##' },
+  CE: { 9: '########-#' },
+  DF: { 13: '########.###-##' },
+  ES: { 9: '###.###.##-#' },
+  GO: { 9: '##.###.###-#' },
+  MA: { 9: '########-#' },
+  MT: { 11: '##########-#' },
+  MS: { 9: '########-#' },
+  MG: { 13: '###.###.###/####' },
+  PA: { 9: '##-######-#' },
+  PB: { 9: '########-#' },
+  PR: { 10: '##.###.###-##' },
+  PE: { 9: '#######-##' },
+  PI: { 9: '########-#' },
+  RJ: { 8: '##.###.##-#' },
+  RN: { 9: '##.###.###-#', 10: '##.#.###.###-#' },
+  RS: { 10: '###/#######' },
+  RO: { 14: '#############-#' },
+  RR: { 9: '##.###.###-#' },
+  SC: { 9: '###.###.###' },
+  SP: { 12: '###.###.###.###' },
+  SE: { 9: '########-#' },
+  TO: { 11: '##.###.###-#' },
+};
+
+export function formatInscricaoEstadual(value: string, uf: string): string {
+  const digits = value.replace(/\D/g, '');
+  const mask = ieMasks[uf.trim().toUpperCase()]?.[digits.length];
+  if (!mask || !/^\d+$/.test(value)) return value;
+
+  let digitIndex = 0;
+  return mask.replace(/#/g, () => digits[digitIndex++] || '');
+}
+
 export function formatPhone(phone: string): string {
   const cleaned = phone.replace(/\D/g, '');
   if (cleaned.length === 11) {

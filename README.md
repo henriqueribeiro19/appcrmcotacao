@@ -16,7 +16,22 @@ Sistema completo de cotação comercial com controle de leads, licenças, cotaç
   - **Royalties automáticos** por categoria de canal (Ouro/Prata/Bronze)
   - Visão interna (com royalties) vs. Proposta comercial (sem royalties)
 - **Exportação de Proposta para PDF** com layout profissional
+- **Contratos Cloudfy após aprovação da cotação**:
+  - Modelo-base editável por administrador
+  - Prévia e ajustes no texto do contrato específico de cada cotação
+  - Tabelas de licenças, serviços e parcelas preenchidas com os dados aprovados e protegidas contra edição direta
+  - Impressão em A4 para salvar como PDF e enviar a um sistema externo de assinatura eletrônica
 - **Dashboard** com métricas de leads, cotações e faturamento
+
+### Fluxo de contratos Cloudfy
+
+Ao aprovar uma cotação Cloudfy, a aplicação abre uma cópia do modelo vigente e preenche os dados do cliente, licenças, serviços e parcelas. Administradores podem revisar o modelo em **Modelo contrato Cloudfy** no menu. Alterações no modelo valem para contratos preparados futuramente; não alteram contratos já criados.
+
+No editor do contrato, o texto pode ser ajustado individualmente. As tabelas financeiras são geradas a partir da cotação aprovada e ficam protegidas contra edição para evitar divergências. O botão **Imprimir / salvar como PDF** abre a impressão do navegador; selecione **Salvar como PDF** e revise a paginação antes de enviar o arquivo ao serviço de assinatura.
+
+Se a cotação ou o cadastro do cliente mudar, uma nova versão pode ser preparada sem sobrescrever a anterior. As versões anteriores ficam disponíveis para consulta em modo somente leitura.
+
+Ao preparar cada nova versão do contrato, as datas da proposta e do contrato são preenchidas com a data corrente. A identificação do representante legal continua exigindo revisão manual. O contrato exibe os logos HRP Soluções e Cloudfy, como na proposta. A prévia e o PDF não representam assinatura eletrônica nem registram a anuência do cliente.
 
 ---
 

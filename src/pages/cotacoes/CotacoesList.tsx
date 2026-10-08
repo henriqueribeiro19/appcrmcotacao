@@ -124,6 +124,7 @@ export function CotacoesList() {
       }
       await fetchCotacoes();
       setCotacaoParaAprovar(null);
+      if (cotacao.tipoProduto === 'cloudfy') navigate(`/cotacoes/${cotacaoId}/contrato`);
     } catch (err) {
       console.error('Erro ao aprovar:', err);
     } finally {
@@ -254,6 +255,7 @@ export function CotacoesList() {
                         {lead && cotacao.itensCplug && cotacao.itensCplug.length > 0 && <Button variant="ghost" size="sm" title="Gerar PDF" onClick={() => handleAbrirPDF(cotacao.id)} className="text-slate-400 hover:text-white"><Printer size={16} /></Button>}
                         {isRascunho && <Button variant="ghost" size="sm" title="Enviar cotação" onClick={() => handleEnviar(cotacao.id)} className="text-sky-400 hover:text-sky-300" disabled={processando === cotacao.id}><Send size={16} /></Button>}
                         {cotacao.status === 'enviada' && <><Button variant="ghost" size="sm" title="Aprovar cotação" onClick={() => setCotacaoParaAprovar(cotacao.id)} className="text-emerald-400 hover:text-emerald-300" disabled={processando === cotacao.id}><CheckCircle size={16} /></Button><Button variant="ghost" size="sm" title="Rejeitar cotação" onClick={() => handleRejeitar(cotacao.id)} className="text-red-400 hover:text-red-300" disabled={processando === cotacao.id}><XCircle size={16} /></Button></>}
+                        {cotacao.status === 'aprovada' && cotacao.tipoProduto === 'cloudfy' && <Button variant="ghost" size="sm" title="Prévia e edição do contrato" onClick={() => navigate(`/cotacoes/${cotacao.id}/contrato`)} className="text-emerald-400 hover:text-emerald-300"><FileText size={16} /></Button>}
                         {isFinalizada && <Button variant="ghost" size="sm" title="Reabrir cotação" onClick={() => handleReabrir(cotacao.id)} className="text-slate-400 hover:text-white" disabled={processando === cotacao.id}><RotateCcw size={16} /></Button>}
                         <Button variant="ghost" size="sm" title="Excluir cotação" onClick={() => setCotacaoParaExcluir(cotacao.id)} className="text-red-400 hover:text-red-300"><Trash2 size={16} /></Button>
                       </div>
@@ -292,12 +294,14 @@ export function CotacoesList() {
       {cotacaoParaAprovar && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <Card className="max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-white mb-2">Aprovar Proposta</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">Registrar aprovação da proposta</h3>
+            <p className="text-sm text-amber-300 mb-4">Confirme esta ação depois de registrar a aprovação do cliente. Ela não representa a assinatura do contrato.</p>
             <p className="text-slate-400 mb-4">Ao aprovar esta proposta:</p>
             <ul className="text-sm text-slate-400 mb-6 space-y-1 list-disc list-inside">
               <li>O status da cotação será alterado para <span className="text-emerald-400">Aprovada</span></li>
               <li>O lead será movido para <span className="text-emerald-400">Fechado Ganho</span></li>
               <li>O lead será arquivado automaticamente</li>
+              <li>Para Cloudfy, será aberta a prévia editável do contrato para gerar o PDF</li>
             </ul>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setCotacaoParaAprovar(null)}>Cancelar</Button>

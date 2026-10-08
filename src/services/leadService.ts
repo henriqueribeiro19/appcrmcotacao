@@ -24,6 +24,18 @@ function normalizarCNPJ(cnpj?: string) {
   return (cnpj || '').replace(/\D/g, '');
 }
 
+function normalizarNomesEmpresa<T extends { razaoSocial?: string; nomeFantasia?: string }>(data: T): T {
+  return {
+    ...data,
+    ...(data.razaoSocial !== undefined
+      ? { razaoSocial: data.razaoSocial.toLocaleUpperCase('pt-BR') }
+      : {}),
+    ...(data.nomeFantasia !== undefined
+      ? { nomeFantasia: data.nomeFantasia.toLocaleUpperCase('pt-BR') }
+      : {}),
+  };
+}
+
 export const leadService = {
   async validarCnpjUnico(cnpj: string, currentId?: string) {
     const cnpjLimpo = normalizarCNPJ(cnpj);
@@ -65,7 +77,7 @@ export const leadService = {
     await this.validarCnpjUnico(data.cnpj, undefined);
 
     const docRef = await addDoc(collection(db, LEADS_COLLECTION), {
-      ...limparUndefined(data as unknown as Record<string, unknown>),
+      ...limparUndefined(normalizarNomesEmpresa(data) as unknown as Record<string, unknown>),
       interacoes: [],
       arquivado: false,
       dataArquivamento: null,
@@ -85,7 +97,7 @@ export const leadService = {
     const { arquivado, dataArquivamento, ...dadosEditaveis } = data;
     await updateDoc(docRef, {
       ...limparUndefined({
-        ...dadosEditaveis,
+        ...normalizarNomesEmpresa(dadosEditaveis),
         ...(statusFinalizado ? { arquivado, dataArquivamento } : {}),
       } as unknown as Record<string, unknown>),
       atualizadoEm: serverTimestamp(),

@@ -154,7 +154,8 @@ export function LeadForm() {
         ...initialFormState,
         ...lead,
         // Garante que campos undefined venham como string vazia para inputs controlados
-        nomeFantasia: lead.nomeFantasia || '',
+        razaoSocial: lead.razaoSocial?.toLocaleUpperCase('pt-BR') || '',
+        nomeFantasia: lead.nomeFantasia?.toLocaleUpperCase('pt-BR') || '',
         telefone: lead.telefone || '',
         email: lead.email || '',
         tipoEmpresa: lead.tipoEmpresa || 'matriz',
@@ -269,8 +270,8 @@ export function LeadForm() {
 
       setForm((prev) => ({
         ...prev,
-        razaoSocial: valorSeVazio(prev.razaoSocial, data.razao_social),
-        nomeFantasia: valorSeVazio(prev.nomeFantasia, data.nome_fantasia),
+        razaoSocial: valorSeVazio(prev.razaoSocial, data.razao_social?.toLocaleUpperCase('pt-BR')),
+        nomeFantasia: valorSeVazio(prev.nomeFantasia, data.nome_fantasia?.toLocaleUpperCase('pt-BR')),
         telefone: valorSeVazio(prev.telefone, telefone),
         email: valorSeVazio(prev.email, data.email),
         cep: valorSeVazio(prev.cep, data.cep?.replace(/\D/g, '')),
@@ -507,14 +508,14 @@ export function LeadForm() {
                   <Input
                     label="Razão Social *"
                     value={form.razaoSocial || ''}
-                    onChange={(e) => setForm({ ...form, razaoSocial: e.target.value })}
+                    onChange={(e) => setForm({ ...form, razaoSocial: e.target.value.toLocaleUpperCase('pt-BR') })}
                     error={errors.razaoSocial}
                     containerClassName="md:col-span-2"
                   />
                   <Input
                     label="Nome Fantasia"
                     value={form.nomeFantasia || ''}
-                    onChange={(e) => setForm({ ...form, nomeFantasia: e.target.value })}
+                    onChange={(e) => setForm({ ...form, nomeFantasia: e.target.value.toLocaleUpperCase('pt-BR') })}
                   />
                 </div>
 
